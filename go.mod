@@ -1,4 +1,4 @@
-module github.com/theangryangel/insim
+module github.com/theangryangel/insim-go
 
 go 1.13
 
