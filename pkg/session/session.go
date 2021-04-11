@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
+	"github.com/theangryangel/insim-go/pkg/state"
 )
 
 type InsimSession struct {
@@ -17,6 +18,8 @@ type InsimSession struct {
 
 	types map[uint8]func() (protocol.Packet)
 	handlers map[reflect.Type][]reflect.Value
+
+	gamestate state.State
 }
 
 func NewInsimSession() (*InsimSession) {
@@ -88,6 +91,7 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.writer = bufio.NewWriter(c.conn)
 
 	c.registerBuiltInPackets()
+	c.trackGameState()
 
 	isi := protocol.NewInit()
 
