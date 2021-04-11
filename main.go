@@ -3,8 +3,8 @@
 package main
 
 import (
-	"github.com/theangryangel/insim/pkg/session"
-	"github.com/theangryangel/insim/pkg/protocol"
+	"github.com/theangryangel/insim-go/pkg/session"
+	"github.com/theangryangel/insim-go/pkg/protocol"
 	"fmt"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	})
 
 	c.On(func(client *session.InsimSession, sta *protocol.Sta) {
-		fmt.Printf("STA: Track: %s\n", sta, sta.Track)
+		fmt.Printf("Track: %s\n", sta.Track)
 	})
 
 	for {

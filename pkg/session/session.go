@@ -7,7 +7,7 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/theangryangel/insim/pkg/protocol"
+	"github.com/theangryangel/insim-go/pkg/protocol"
 )
 
 type InsimSession struct {
