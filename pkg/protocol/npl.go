@@ -11,15 +11,13 @@ const (
 
 type Npl struct {
 	ReqI uint8 `struct:"uint8"`
-	
+
 	Plid uint8 `struct:"uint8"`
 	Ucid uint8 `struct:"uint8"`
-
+	PType uint8 `struct:"uint8"`
 	Flags uint16 `struct:"uint16"`
-
 	PName string `struct:"[24]byte"`
 	Plate string `struct:"[8]byte"`
-
 	CName string `struct:"[4]byte"`
 	SName string `struct:"[16]byte"`
 	Tyres [4]uint8 `struct:"[4]uint8"`

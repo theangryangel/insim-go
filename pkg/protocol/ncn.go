@@ -21,6 +21,14 @@ type Ncn struct {
 	Spare uint8 `struct:"uint8"`
 }
 
+func (p *Ncn) IsAdmin() (bool) {
+	return p.Admin == 1
+}
+
+func (p *Ncn) IsRemote() (bool) {
+	return false // TODO
+}
+
 func (p *Ncn) Unmarshal(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }

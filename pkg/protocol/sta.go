@@ -2,6 +2,8 @@ package protocol
 
 import (
 	"encoding/binary"
+	"time"
+
 	"github.com/go-restruct/restruct"
 )
 
@@ -28,6 +30,15 @@ type Sta struct {
 	Track string `struct:"[6]byte"`
 	Weather uint8 `struct:"uint8"`
 	Wind uint8 `struct:"uint8"`
+}
+
+func (p *Sta) Racing() (bool) {
+	return p.RaceInProg == 1
+}
+
+func (p *Sta) QualifyingDuration() (time.Duration) {
+	// TODO decode the special rules
+	return (time.Duration(p.QualMins) * time.Minute)
 }
 
 func (p *Sta) Unmarshal(data []byte) (err error) {

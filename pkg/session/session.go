@@ -26,19 +26,6 @@ func NewInsimSession() (*InsimSession) {
 	return &InsimSession{}
 }
 
-func (c *InsimSession) registerBuiltInPackets() {
-	// TODO: generate this automatically from pkg/protocol/*.go
-	c.RegisterPacket(protocol.ISP_MSO, protocol.NewIrpSel)
-	c.RegisterPacket(protocol.ISP_TINY, protocol.NewTiny)
-	c.RegisterPacket(protocol.ISP_STA, protocol.NewSta)
-	c.RegisterPacket(protocol.ISP_VER, protocol.NewVer)
-	c.RegisterPacket(protocol.ISP_NCN, protocol.NewNcn)
-	c.RegisterPacket(protocol.ISP_CNL, protocol.NewCnl)
-	c.RegisterPacket(protocol.ISP_CPR, protocol.NewCpr)
-	c.RegisterPacket(protocol.ISP_NPL, protocol.NewNpl)
-	c.RegisterPacket(protocol.ISP_PLL, protocol.NewPll)
-}
-
 func (c *InsimSession) RegisterPacket(ptype uint8, f func() (protocol.Packet)) {
 	if c.types == nil{
 		c.types = make(map[uint8]func() (protocol.Packet))
@@ -49,7 +36,7 @@ func (c *InsimSession) RegisterPacket(ptype uint8, f func() (protocol.Packet)) {
 
 func (c *InsimSession) Unmarshal(data []byte) (packet protocol.Packet, err error) {
 	ptype := uint8(data[0])
-	
+
 	if v, found := c.types[ptype]; found {
 		payload := v()
 		err := payload.Unmarshal(data[1:])
@@ -92,13 +79,18 @@ func (c *InsimSession) Dial(address string) error {
 	return c.UseConn(conn)
 }
 
+func (c *InsimSession) Use(f func(*InsimSession)) {
+	f(c)
+}
+
 func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.conn = conn
 	c.reader = bufio.NewReader(c.conn)
 	c.writer = bufio.NewWriter(c.conn)
 
-	c.registerBuiltInPackets()
-	c.trackGameState()
+	c.Use(useBuiltInPackets)
+	c.Use(usePing)
+	c.Use(useGameState)
 	return nil
 }
 
@@ -119,22 +111,21 @@ func (c *InsimSession) SelectRelayHost(hostname string) (err error) {
 }
 
 func (c *InsimSession) RequestState() (err error) {
-	verreq := protocol.NewTiny().(*protocol.Tiny)
-	verreq.ReqI = 1
-	verreq.SubT = protocol.TINY_VER
-
-	err = c.Write(verreq)
-	if err != nil {
-		return err
+	subts := [...]uint8{
+		protocol.TINY_VER,
+		protocol.TINY_SST,
+		protocol.TINY_NCN,
+		protocol.TINY_NPL,
 	}
+	req := protocol.NewTiny().(*protocol.Tiny)
 
-	connreq := protocol.NewTiny().(*protocol.Tiny)
-	connreq.ReqI = 2
-	connreq.SubT = protocol.TINY_NCN
-
-	err = c.Write(connreq)
-	if err != nil {
-		return err
+	for idx, subt := range subts {
+		req.ReqI = uint8(idx)
+		req.SubT = subt
+		err = c.Write(req)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -203,6 +194,24 @@ func (c *InsimSession) Read() (error) {
 	}
 
 	return ErrNoPacket
+}
+
+func (c *InsimSession) ReadLoop() (error) {
+	for {
+		err := c.Read()
+		if err != nil {
+
+			if err == ErrUnknownType {
+				continue
+			}
+
+			if err == ErrNotEnough {
+				continue
+			}
+
+			return err
+		}
+	}
 }
 
 func (c *InsimSession) Call(data interface{}) {
