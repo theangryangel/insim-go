@@ -6,20 +6,31 @@ import (
 	"github.com/theangryangel/insim-go/pkg/session"
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"fmt"
+	"flag"
 )
 
 func main() {
-	c := session.NewInsimSession()
-	err := c.Dial("192.168.0.250:29999")
-	if err != nil {
-		panic(err)
-	}
-	defer c.Close()
+	host := flag.String("host", "127.0.0.1:29999", "host:port to dial or hostname if using -relay")
+	relay := flag.Bool("relay", false, "Use LFSW relay")
+	flag.Parse()
 
-	fmt.Println("Connected!")
+	dial := *host
+	if *relay {
+		dial = "isrelay.lfs.net:47474"
+	}
+
+	c := session.NewInsimSession()
+
+	c.On(func(client *session.InsimSession, ver *protocol.Ver) {
+		if ver.ReqI != 1 {
+			return
+		}
+		fmt.Printf("Connected. Ver = %v\n", ver)
+
+	})
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
-		fmt.Printf("Handled Msg: %s\n", mso.Msg)
+		fmt.Printf("Msg: %s\n", mso.Msg)
 	})
 
 	c.On(func(client *session.InsimSession, data *protocol.Tiny) {
@@ -33,12 +44,27 @@ func main() {
 		fmt.Printf("Track: %s\n", sta.Track)
 	})
 
+	err := c.Dial(dial)
+	if err != nil {
+		panic(err)
+	}
+	defer c.Close()
+
+	fmt.Println("Connected!")
+
+	if *relay {
+		c.SelectRelayHost(*host)
+	} else {
+		c.Init()
+	}
+
+	c.RequestState()
+
 	for {
 	  err := c.Read()
 		if err != nil {
 
 			if err == session.ErrUnknownType {
-				fmt.Println("Unknown Packet")
 				continue
 			}
 

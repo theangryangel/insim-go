@@ -26,7 +26,7 @@ func (p *Mso) Unmarshal(data []byte) (err error) {
 		return err
 	}
 
-	start := p.TextStart + 7
+	start := p.TextStart + 6
 	p.Msg = string(data[start:])
 	return err
 }

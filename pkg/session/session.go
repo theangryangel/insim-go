@@ -19,7 +19,7 @@ type InsimSession struct {
 	types map[uint8]func() (protocol.Packet)
 	handlers map[reflect.Type][]reflect.Value
 
-	gamestate state.State
+	GameState state.State
 }
 
 func NewInsimSession() (*InsimSession) {
@@ -27,9 +27,16 @@ func NewInsimSession() (*InsimSession) {
 }
 
 func (c *InsimSession) registerBuiltInPackets() {
-	c.RegisterPacket(protocol.ISP_MSO, protocol.NewMso)
+	// TODO: generate this automatically from pkg/protocol/*.go
+	c.RegisterPacket(protocol.ISP_MSO, protocol.NewIrpSel)
 	c.RegisterPacket(protocol.ISP_TINY, protocol.NewTiny)
 	c.RegisterPacket(protocol.ISP_STA, protocol.NewSta)
+	c.RegisterPacket(protocol.ISP_VER, protocol.NewVer)
+	c.RegisterPacket(protocol.ISP_NCN, protocol.NewNcn)
+	c.RegisterPacket(protocol.ISP_CNL, protocol.NewCnl)
+	c.RegisterPacket(protocol.ISP_CPR, protocol.NewCpr)
+	c.RegisterPacket(protocol.ISP_NPL, protocol.NewNpl)
+	c.RegisterPacket(protocol.ISP_PLL, protocol.NewPll)
 }
 
 func (c *InsimSession) RegisterPacket(ptype uint8, f func() (protocol.Packet)) {
@@ -92,13 +99,44 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 
 	c.registerBuiltInPackets()
 	c.trackGameState()
+	return nil
+}
 
+func (c *InsimSession) Init() (err error) {
 	isi := protocol.NewInit()
 
 	err = c.Write(isi)
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *InsimSession) SelectRelayHost(hostname string) (err error) {
+	sel := protocol.NewIrpSel().(*protocol.IrpSel)
+	sel.HName = hostname
+	return c.Write(sel)
+}
+
+func (c *InsimSession) RequestState() (err error) {
+	verreq := protocol.NewTiny().(*protocol.Tiny)
+	verreq.ReqI = 1
+	verreq.SubT = protocol.TINY_VER
+
+	err = c.Write(verreq)
+	if err != nil {
+		return err
+	}
+
+	connreq := protocol.NewTiny().(*protocol.Tiny)
+	connreq.ReqI = 2
+	connreq.SubT = protocol.TINY_NCN
+
+	err = c.Write(connreq)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
