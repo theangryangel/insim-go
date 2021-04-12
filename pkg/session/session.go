@@ -19,7 +19,7 @@ type InsimSession struct {
 	types map[uint8]func() (protocol.Packet)
 	handlers map[reflect.Type][]reflect.Value
 
-	GameState state.State
+	GameState state.GameState
 }
 
 func NewInsimSession() (*InsimSession) {

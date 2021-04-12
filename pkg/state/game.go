@@ -5,27 +5,7 @@ import (
 	"github.com/theangryangel/insim-go/pkg/protocol"
 )
 
-type Connection struct {
-	Username string
-	Playername string
-
-	Admin bool
-	Remote bool
-}
-
-type Player struct {
-	Playername string
-	Plate string
-	Pitting bool
-
-	ConnectionId uint8
-
-	RacePosition uint8
-	RaceLap uint16
-	SpeedMph float32
-}
-
-type State struct {
+type GameState struct {
 	Track string
 	Weather uint8
 	Wind uint8
@@ -37,7 +17,7 @@ type State struct {
 	Players map[uint8]*Player
 }
 
-func (s *State) FromNcn(ncn *protocol.Ncn) {
+func (s *GameState) FromNcn(ncn *protocol.Ncn) {
 	// TODO: Needs locks
 	if s.Connections == nil {
 		s.Connections = make(map[uint8]*Connection)
@@ -60,7 +40,7 @@ func (s *State) FromNcn(ncn *protocol.Ncn) {
 	}
 }
 
-func (s *State) FromCnl(cnl *protocol.Cnl) {
+func (s *GameState) FromCnl(cnl *protocol.Cnl) {
 	if s.Connections == nil {
 		return
 	}
@@ -72,7 +52,7 @@ func (s *State) FromCnl(cnl *protocol.Cnl) {
 	}
 }
 
-func (s *State) FromNpl(
+func (s *GameState) FromNpl(
 	npl *protocol.Npl,
 ) {
 	// TODO: Needs locks
@@ -96,7 +76,7 @@ func (s *State) FromNpl(
 	}
 }
 
-func (s *State) FromPll(pll *protocol.Pll){
+func (s *GameState) FromPll(pll *protocol.Pll){
 	if s.Players == nil {
 		return
 	}
@@ -108,7 +88,7 @@ func (s *State) FromPll(pll *protocol.Pll){
 	}
 }
 
-func (s *State) FromPlp(plp *protocol.Plp){
+func (s *GameState) FromPlp(plp *protocol.Plp){
 	if s.Players == nil {
 		return
 	}
@@ -120,7 +100,7 @@ func (s *State) FromPlp(plp *protocol.Plp){
 	}
 }
 
-func (s *State) FromMci(mci *protocol.Mci) {
+func (s *GameState) FromMci(mci *protocol.Mci) {
 	if s.Players == nil {
 		return
 	}
@@ -128,10 +108,9 @@ func (s *State) FromMci(mci *protocol.Mci) {
 	for _, info := range mci.Info {
 
 		if v, ok := s.Players[info.Plid]; ok {
-			v.SpeedMph = info.Mph()
+			v.Speed = info.Speed
 			v.RacePosition = info.Position
 			v.RaceLap = info.Lap
 		}
 	}
-
 }
