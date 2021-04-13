@@ -32,7 +32,7 @@ func main() {
 		fmt.Printf("Msg: %s\n", mso.Msg)
 	})
 
-	c.On(func(client *session.InsimSession, hos *protocol.IrpHos){
+	c.On(func(client *session.InsimSession, hos *protocol.IrpHos) {
 		fmt.Printf("Hosts:\n")
 		for _, info := range hos.HInfo {
 			fmt.Printf("%s\n", info.HName)
@@ -70,26 +70,26 @@ func main() {
 		}
 	}()
 
-  // Echo instance
-  e := echo.New()
+	// Echo instance
+	e := echo.New()
 
-  // Middleware
-  e.Use(middleware.Logger())
-  e.Use(middleware.Recover())
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-  e.GET("/api/connections", func(ec echo.Context) error {
+	e.GET("/api/connections", func(ec echo.Context) error {
 		return ec.JSON(http.StatusOK, c.GameState.Connections)
 	})
 
-  e.GET("/api/players", func(ec echo.Context) error {
+	e.GET("/api/players", func(ec echo.Context) error {
 		return ec.JSON(http.StatusOK, c.GameState.Players)
 	})
 
-  e.GET("/api/state", func(ec echo.Context) error {
+	e.GET("/api/state", func(ec echo.Context) error {
 		return ec.JSON(http.StatusOK, c.GameState)
 	})
 
 	e.Static("/", "static")
 
-  e.Logger.Fatal(e.Start("0.0.0.0:4000"))
+	e.Logger.Fatal(e.Start("0.0.0.0:4000"))
 }
