@@ -1,9 +1,9 @@
 package state
 
 type Connection struct {
-	Username string
+	Username   string
 	Playername string
 
-	Admin bool
+	Admin  bool
 	Remote bool
 }

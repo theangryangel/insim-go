@@ -14,7 +14,7 @@ type Cnl struct {
 	Ucid uint8 `struct:"uint8"`
 
 	Reason uint8 `struct:"uint8"`
-	Total uint8 `struct:"uint8"`
+	Total  uint8 `struct:"uint8"`
 	Spare2 uint8 `struct:"uint8"`
 	Spare3 uint8 `struct:"uint8"`
 }
@@ -27,15 +27,14 @@ func (p *Cnl) Marshal() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *Cnl) Type() (uint8) {
+func (p *Cnl) Type() uint8 {
 	return ISP_NCN
 }
 
-func NewCnl() (Packet) {
-	return &Cnl{
-	}
+func NewCnl() Packet {
+	return &Cnl{}
 }
 
-func (p *Cnl) New() (Packet) {
+func (p *Cnl) New() Packet {
 	return NewCnl()
 }

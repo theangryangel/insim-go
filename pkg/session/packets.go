@@ -1,6 +1,6 @@
 package session
 
-import(
+import (
 	"github.com/theangryangel/insim-go/pkg/protocol"
 )
 

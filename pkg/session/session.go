@@ -14,11 +14,11 @@ import (
 )
 
 type InsimSession struct {
-	conn net.Conn
+	conn   net.Conn
 	reader *bufio.Reader
 	writer *bufio.Writer
 
-	types map[uint8]func() (protocol.Packet)
+	types    map[uint8]func() protocol.Packet
 	handlers map[reflect.Type][]reflect.Value
 
 	GameState state.GameState
@@ -27,13 +27,13 @@ type InsimSession struct {
 	discard uint8
 }
 
-func NewInsimSession() (*InsimSession) {
+func NewInsimSession() *InsimSession {
 	return &InsimSession{}
 }
 
-func (c *InsimSession) RegisterPacket(ptype uint8, f func() (protocol.Packet)) {
-	if c.types == nil{
-		c.types = make(map[uint8]func() (protocol.Packet))
+func (c *InsimSession) RegisterPacket(ptype uint8, f func() protocol.Packet) {
+	if c.types == nil {
+		c.types = make(map[uint8]func() protocol.Packet)
 	}
 
 	c.types[ptype] = f
@@ -173,7 +173,7 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 	return err
 }
 
-func (c *InsimSession) Read() (error) {
+func (c *InsimSession) Read() error {
 	// TODO Remove. This is to aide debugging a potential WSL2 packetloss issue
 	if c.discard > 0 {
 		c.reader.Discard(int(c.discard))
@@ -185,7 +185,7 @@ func (c *InsimSession) Read() (error) {
 		return err
 	}
 
-  nextLen := uint8(nextByte[0])
+	nextLen := uint8(nextByte[0])
 
 	if c.reader.Buffered() < int(nextLen) {
 		fmt.Printf("Needed %d, got %d, Buffer Cap %d", nextLen, c.reader.Buffered(), c.reader.Size())
@@ -226,7 +226,7 @@ func (c *InsimSession) Read() (error) {
 	return ErrNoPacket
 }
 
-func (c *InsimSession) ReadLoop() (error) {
+func (c *InsimSession) ReadLoop() error {
 	for {
 		err := c.Read()
 		if err != nil {

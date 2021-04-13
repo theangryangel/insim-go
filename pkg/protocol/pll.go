@@ -22,15 +22,14 @@ func (p *Pll) Marshal() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *Pll) Type() (uint8) {
+func (p *Pll) Type() uint8 {
 	return ISP_PLL
 }
 
-func NewPll() (Packet) {
-	return &Pll{
-	}
+func NewPll() Packet {
+	return &Pll{}
 }
 
-func (p *Pll) New() (Packet) {
+func (p *Pll) New() Packet {
 	return NewPll()
 }

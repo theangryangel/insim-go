@@ -15,17 +15,17 @@ type Ncn struct {
 
 	UName string `struct:"[24]byte"`
 	PName string `struct:"[24]byte"`
-	Admin uint8 `struct:"uint8"`
-	Total uint8 `struct:"uint8"`
-	Flags uint8 `struct:"uint8"`
-	Spare uint8 `struct:"uint8"`
+	Admin uint8  `struct:"uint8"`
+	Total uint8  `struct:"uint8"`
+	Flags uint8  `struct:"uint8"`
+	Spare uint8  `struct:"uint8"`
 }
 
-func (p *Ncn) IsAdmin() (bool) {
+func (p *Ncn) IsAdmin() bool {
 	return p.Admin == 1
 }
 
-func (p *Ncn) IsRemote() (bool) {
+func (p *Ncn) IsRemote() bool {
 	return false // TODO
 }
 
@@ -37,15 +37,14 @@ func (p *Ncn) Marshal() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *Ncn) Type() (uint8) {
+func (p *Ncn) Type() uint8 {
 	return ISP_NCN
 }
 
-func NewNcn() (Packet) {
-	return &Ncn{
-	}
+func NewNcn() Packet {
+	return &Ncn{}
 }
 
-func (p *Ncn) New() (Packet) {
+func (p *Ncn) New() Packet {
 	return NewNcn()
 }

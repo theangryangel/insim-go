@@ -2,12 +2,12 @@ package state
 
 type Player struct {
 	Playername string
-	Plate string
-	Pitting bool
+	Plate      string
+	Pitting    bool
 
 	ConnectionId uint8
 
 	RacePosition uint8
-	RaceLap uint16
-	Speed uint16 // temporarily disable Mph
+	RaceLap      uint16
+	Speed        uint16 // temporarily disable Mph
 }

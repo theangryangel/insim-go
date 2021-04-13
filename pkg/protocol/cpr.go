@@ -25,15 +25,14 @@ func (p *Cpr) Marshal() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *Cpr) Type() (uint8) {
+func (p *Cpr) Type() uint8 {
 	return ISP_NCN
 }
 
-func NewCpr() (Packet) {
-	return &Cpr{
-	}
+func NewCpr() Packet {
+	return &Cpr{}
 }
 
-func (p *Cpr) New() (Packet) {
+func (p *Cpr) New() Packet {
 	return NewCpr()
 }

@@ -1,20 +1,20 @@
 package state
 
 import (
-	"time"
 	"github.com/theangryangel/insim-go/pkg/protocol"
+	"time"
 )
 
 type GameState struct {
-	Track string
-	Weather uint8
-	Wind uint8
-	Laps uint8
-	Racing bool
+	Track              string
+	Weather            uint8
+	Wind               uint8
+	Laps               uint8
+	Racing             bool
 	QualifyingDuration time.Duration
 
 	Connections map[uint8]*Connection
-	Players map[uint8]*Player
+	Players     map[uint8]*Player
 }
 
 func (s *GameState) FromNcn(ncn *protocol.Ncn) {
@@ -30,12 +30,12 @@ func (s *GameState) FromNcn(ncn *protocol.Ncn) {
 		v.Playername = ncn.PName
 		v.Admin = ncn.IsAdmin()
 		v.Remote = ncn.IsRemote()
-	} else{
+	} else {
 		s.Connections[id] = &Connection{
-			Username: ncn.UName,
+			Username:   ncn.UName,
 			Playername: ncn.PName,
-			Admin: ncn.IsAdmin(),
-			Remote: ncn.IsRemote(),
+			Admin:      ncn.IsAdmin(),
+			Remote:     ncn.IsRemote(),
 		}
 	}
 }
@@ -67,16 +67,16 @@ func (s *GameState) FromNpl(
 		v.Plate = npl.Plate
 		v.ConnectionId = npl.Ucid
 		v.Pitting = false
-	} else{
+	} else {
 		s.Players[id] = &Player{
-			Playername: npl.PName,
-			Plate: npl.Plate,
+			Playername:   npl.PName,
+			Plate:        npl.Plate,
 			ConnectionId: npl.Ucid,
 		}
 	}
 }
 
-func (s *GameState) FromPll(pll *protocol.Pll){
+func (s *GameState) FromPll(pll *protocol.Pll) {
 	if s.Players == nil {
 		return
 	}
@@ -88,7 +88,7 @@ func (s *GameState) FromPll(pll *protocol.Pll){
 	}
 }
 
-func (s *GameState) FromPlp(plp *protocol.Plp){
+func (s *GameState) FromPlp(plp *protocol.Plp) {
 	if s.Players == nil {
 		return
 	}
