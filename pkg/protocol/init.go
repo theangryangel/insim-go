@@ -38,8 +38,13 @@ func (p *Init) New() Packet {
 }
 
 func NewInit() Packet {
+	flags := uint16(0)
+	flags = flags | 32
+
 	return &Init{
 		InSimVer: 8,
 		IName:    "insim.go",
+		Interval: 1000,
+		Flags:    flags,
 	}
 }

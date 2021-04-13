@@ -90,7 +90,7 @@ func (c *InsimSession) Use(f func(*InsimSession)) {
 
 func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.conn = conn
-	c.reader = bufio.NewReader(c.conn)
+	c.reader = bufio.NewReaderSize(c.conn, 8096)
 	c.writer = bufio.NewWriter(c.conn)
 	c.mangled = 0
 	c.discard = 0
@@ -200,7 +200,7 @@ func (c *InsimSession) Read() error {
 			fmt.Printf("resetting...\n")
 			c.discard = nextLen - uint8(len(buf))
 			c.mangled = 0
-			c.reader.Reset(bufio.NewReader(c.conn))
+			c.reader.Reset(bufio.NewReaderSize(c.conn, 8096))
 		}
 		return ErrNotEnough
 	}
