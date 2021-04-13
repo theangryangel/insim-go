@@ -1,11 +1,13 @@
 package session
 
 import (
-	"net"
 	"bufio"
-	"io"
 	"errors"
+	"fmt"
+	"io"
+	"net"
 	"reflect"
+	"time"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"github.com/theangryangel/insim-go/pkg/state"
@@ -20,6 +22,9 @@ type InsimSession struct {
 	handlers map[reflect.Type][]reflect.Value
 
 	GameState state.GameState
+
+	mangled uint8
+	discard uint8
 }
 
 func NewInsimSession() (*InsimSession) {
@@ -87,6 +92,8 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.conn = conn
 	c.reader = bufio.NewReader(c.conn)
 	c.writer = bufio.NewWriter(c.conn)
+	c.mangled = 0
+	c.discard = 0
 
 	c.Use(useBuiltInPackets)
 	c.Use(usePing)
@@ -123,6 +130,7 @@ func (c *InsimSession) RequestState() (err error) {
 		req.ReqI = uint8(idx)
 		req.SubT = subt
 		err = c.Write(req)
+		fmt.Printf("Req State %d\n", subt)
 		if err != nil {
 			return err
 		}
@@ -166,6 +174,12 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 }
 
 func (c *InsimSession) Read() (error) {
+	// TODO Remove. This is to aide debugging a potential WSL2 packetloss issue
+	if c.discard > 0 {
+		c.reader.Discard(int(c.discard))
+		c.discard = 0
+	}
+
 	nextByte, err := c.reader.Peek(1)
 	if err != nil {
 		return err
@@ -174,6 +188,20 @@ func (c *InsimSession) Read() (error) {
   nextLen := uint8(nextByte[0])
 
 	if c.reader.Buffered() < int(nextLen) {
+		fmt.Printf("Needed %d, got %d, Buffer Cap %d", nextLen, c.reader.Buffered(), c.reader.Size())
+		c.mangled++
+		time.Sleep(time.Duration(c.mangled) * time.Second)
+		if c.mangled > 4 {
+			buf := make([]byte, c.reader.Buffered())
+			_, err = io.ReadFull(c.reader, buf)
+
+			fmt.Printf("Buffer: %v", buf)
+			//panic(ErrNotEnough)
+			fmt.Printf("resetting...\n")
+			c.discard = nextLen - uint8(len(buf))
+			c.mangled = 0
+			c.reader.Reset(bufio.NewReader(c.conn))
+		}
 		return ErrNotEnough
 	}
 
@@ -182,6 +210,8 @@ func (c *InsimSession) Read() (error) {
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("Got: %d\n", buf[1])
 
 	packet, err := c.Unmarshal(buf[1:])
 	if err != nil {
@@ -206,6 +236,7 @@ func (c *InsimSession) ReadLoop() (error) {
 			}
 
 			if err == ErrNotEnough {
+				fmt.Printf("Not enough data to read full packet\n")
 				continue
 			}
 

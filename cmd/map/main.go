@@ -18,6 +18,7 @@ import (
 func main() {
 	host := flag.String("host", "127.0.0.1:29999", "host:port to dial or hostname if using -relay")
 	relay := flag.Bool("relay", false, "Use LFSW relay")
+	list := flag.Bool("rlist", false, "Fetch host list from relay")
 	flag.Parse()
 
 	dial := *host
@@ -31,6 +32,17 @@ func main() {
 		fmt.Printf("Msg: %s\n", mso.Msg)
 	})
 
+	c.On(func(client *session.InsimSession, hos *protocol.IrpHos){
+		fmt.Printf("Hosts:\n")
+		for _, info := range hos.HInfo {
+			fmt.Printf("%s\n", info.HName)
+		}
+	})
+
+	c.On(func(client *session.InsimSession, err *protocol.IrpErr) {
+		fmt.Printf("Relay Error: %s\n", err.ErrMessage())
+	})
+
 	go func() {
 		fmt.Println("Dialling")
 		err := c.Dial(dial)
@@ -41,13 +53,17 @@ func main() {
 
 		fmt.Println("Connected!")
 
-		if *relay {
+		if *relay && *list {
+			hlr := protocol.NewIrpHlr()
+			c.Write(hlr)
+		} else if *relay {
 			c.SelectRelayHost(*host)
+			c.RequestState()
 		} else {
 			c.Init()
+			c.RequestState()
 		}
 
-		c.RequestState()
 		err = c.ReadLoop()
 		if err != nil {
 			panic(err)

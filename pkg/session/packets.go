@@ -6,7 +6,11 @@ import(
 
 func useBuiltInPackets(c *InsimSession) {
 	// TODO: generate this automatically from pkg/protocol/*.go
-	c.RegisterPacket(protocol.ISP_MSO, protocol.NewIrpSel)
+	c.RegisterPacket(protocol.IRP_SEL, protocol.NewIrpSel)
+	c.RegisterPacket(protocol.IRP_ERR, protocol.NewIrpErr)
+	c.RegisterPacket(protocol.IRP_HOS, protocol.NewIrpHos)
+	c.RegisterPacket(protocol.IRP_HLR, protocol.NewIrpHlr)
+
 	c.RegisterPacket(protocol.ISP_TINY, protocol.NewTiny)
 	c.RegisterPacket(protocol.ISP_STA, protocol.NewSta)
 	c.RegisterPacket(protocol.ISP_VER, protocol.NewVer)
