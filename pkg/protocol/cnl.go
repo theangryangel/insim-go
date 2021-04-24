@@ -7,6 +7,17 @@ import (
 
 const (
 	ISP_CNL = 19
+
+	LEAVR_DISCO    = 0
+	LEAVR_TIMEOUT  = 1
+	LEAVR_LOSTCONN = 2
+	LEAVR_KICKED   = 3
+	LEAVR_BANNED   = 4
+	LEAVR_SECURITY = 5
+	LEAVR_CPW      = 6
+	LEAVR_OOS      = 7
+	LEAVR_JOOS     = 8
+	LEAVR_HACK     = 9
 )
 
 type Cnl struct {

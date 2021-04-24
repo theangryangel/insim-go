@@ -25,23 +25,28 @@ type Pla struct {
 }
 
 func (p *Pla) Entering() bool {
-	return ((p.Fact >> PITLANE_ENTER) & 1) != 0
+	switch p.Fact {
+	case PITLANE_ENTER, PITLANE_NO_PURPOSE, PITLANE_DT, PITLANE_SG:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *Pla) Exiting() bool {
-	return ((p.Fact >> PITLANE_EXIT) & 1) != 0
+	return p.Fact == PITLANE_EXIT
 }
 
 func (p *Pla) NoPurpose() bool {
-	return ((p.Fact >> PITLANE_NO_PURPOSE) & 1) != 0
+	return p.Fact == PITLANE_NO_PURPOSE
 }
 
 func (p *Pla) StopGo() bool {
-	return ((p.Fact >> PITLANE_SG) & 1) != 0
+	return p.Fact == PITLANE_SG
 }
 
 func (p *Pla) DriveThrough() bool {
-	return ((p.Fact >> PITLANE_DT) & 1) != 0
+	return p.Fact == PITLANE_DT
 }
 
 func (p *Pla) UnmarshalInsim(data []byte) (err error) {
