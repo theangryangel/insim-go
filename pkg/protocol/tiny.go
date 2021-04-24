@@ -42,11 +42,11 @@ type Tiny struct {
 	SubT uint8 `struct:"uint8"`
 }
 
-func (p *Tiny) Unmarshal(data []byte) (err error) {
+func (p *Tiny) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Tiny) Marshal() (data []byte, err error) {
+func (p *Tiny) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

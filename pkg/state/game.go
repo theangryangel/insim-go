@@ -2,14 +2,17 @@ package state
 
 import (
 	"github.com/theangryangel/insim-go/pkg/protocol"
+	"sync"
 	"time"
 )
 
 type GameState struct {
+	mu sync.Mutex
+
 	Track              string
 	Weather            uint8
 	Wind               uint8
-	Laps               uint8
+	Laps               int32
 	Racing             bool
 	QualifyingDuration time.Duration
 
@@ -18,7 +21,8 @@ type GameState struct {
 }
 
 func (s *GameState) FromNcn(ncn *protocol.Ncn) {
-	// TODO: Needs locks
+	s.mu.Lock()
+
 	if s.Connections == nil {
 		s.Connections = make(map[uint8]*Connection)
 	}
@@ -38,9 +42,12 @@ func (s *GameState) FromNcn(ncn *protocol.Ncn) {
 			Remote:     ncn.IsRemote(),
 		}
 	}
+
+	s.mu.Unlock()
 }
 
 func (s *GameState) FromCnl(cnl *protocol.Cnl) {
+	s.mu.Lock()
 	if s.Connections == nil {
 		return
 	}
@@ -50,12 +57,13 @@ func (s *GameState) FromCnl(cnl *protocol.Cnl) {
 	if _, ok := s.Connections[id]; ok {
 		delete(s.Connections, id)
 	}
+	s.mu.Unlock()
 }
 
 func (s *GameState) FromNpl(
 	npl *protocol.Npl,
 ) {
-	// TODO: Needs locks
+	s.mu.Lock()
 	if s.Players == nil {
 		s.Players = make(map[uint8]*Player)
 	}
@@ -74,9 +82,12 @@ func (s *GameState) FromNpl(
 			ConnectionId: npl.Ucid,
 		}
 	}
+	s.mu.Unlock()
 }
 
 func (s *GameState) FromPll(pll *protocol.Pll) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.Players == nil {
 		return
 	}
@@ -89,6 +100,8 @@ func (s *GameState) FromPll(pll *protocol.Pll) {
 }
 
 func (s *GameState) FromPlp(plp *protocol.Plp) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.Players == nil {
 		return
 	}
@@ -101,6 +114,8 @@ func (s *GameState) FromPlp(plp *protocol.Plp) {
 }
 
 func (s *GameState) FromMci(mci *protocol.Mci) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.Players == nil {
 		return
 	}
@@ -111,6 +126,9 @@ func (s *GameState) FromMci(mci *protocol.Mci) {
 			v.Speed = info.Speed
 			v.RacePosition = info.Position
 			v.RaceLap = info.Lap
+			v.X = info.X
+			v.Y = info.Y
+			v.Z = info.Z
 		}
 	}
 }

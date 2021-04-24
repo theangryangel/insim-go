@@ -17,11 +17,11 @@ type Cpr struct {
 	Plate string `struct:"[8]byte"`
 }
 
-func (p *Cpr) Unmarshal(data []byte) (err error) {
+func (p *Cpr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Cpr) Marshal() (data []byte, err error) {
+func (p *Cpr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

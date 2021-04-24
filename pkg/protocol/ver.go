@@ -19,11 +19,11 @@ type Ver struct {
 	Spare    uint8  `struct:"uint8"`
 }
 
-func (p *Ver) Unmarshal(data []byte) (err error) {
+func (p *Ver) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Ver) Marshal() (data []byte, err error) {
+func (p *Ver) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

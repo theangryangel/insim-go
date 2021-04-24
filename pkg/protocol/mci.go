@@ -46,11 +46,11 @@ type Mci struct {
 	Info []MciInfo
 }
 
-func (p *Mci) Unmarshal(data []byte) (err error) {
+func (p *Mci) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Mci) Marshal() (data []byte, err error) {
+func (p *Mci) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

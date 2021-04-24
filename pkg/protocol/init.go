@@ -21,11 +21,11 @@ type Init struct {
 	IName    string `struct:"[16]byte"`
 }
 
-func (p *Init) Unmarshal(data []byte) (err error) {
+func (p *Init) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Init) Marshal() (data []byte, err error) {
+func (p *Init) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

@@ -29,7 +29,9 @@ func main() {
 	c := session.NewInsimSession()
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
-		fmt.Printf("Msg: %s\n", mso.Msg)
+		if player, ok := c.GameState.Players[mso.Plid]; ok {
+			fmt.Printf("Msg: %s: %s\n", player.Playername, mso.Msg)
+		}
 	})
 
 	c.On(func(client *session.InsimSession, hos *protocol.IrpHos) {
@@ -41,6 +43,12 @@ func main() {
 
 	c.On(func(client *session.InsimSession, err *protocol.IrpErr) {
 		fmt.Printf("Relay Error: %s\n", err.ErrMessage())
+	})
+
+	c.On(func(client *session.InsimSession, res *protocol.Res) {
+		if player, ok := c.GameState.Players[res.Plid]; ok {
+			fmt.Printf("Result: %s position=%d,btime=%s\n", player.Playername, res.ResultNum, res.BestTime())
+		}
 	})
 
 	go func() {
@@ -64,7 +72,8 @@ func main() {
 			c.RequestState()
 		}
 
-		err = c.ReadLoop()
+		err = c.Scan()
+
 		if err != nil {
 			panic(err)
 		}

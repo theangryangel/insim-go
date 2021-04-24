@@ -14,11 +14,11 @@ type Plp struct {
 	Plid uint8 `struct:"uint8"`
 }
 
-func (p *Plp) Unmarshal(data []byte) (err error) {
+func (p *Plp) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Plp) Marshal() (data []byte, err error) {
+func (p *Plp) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

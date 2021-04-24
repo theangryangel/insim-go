@@ -19,11 +19,11 @@ type Cnl struct {
 	Spare3 uint8 `struct:"uint8"`
 }
 
-func (p *Cnl) Unmarshal(data []byte) (err error) {
+func (p *Cnl) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Cnl) Marshal() (data []byte, err error) {
+func (p *Cnl) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

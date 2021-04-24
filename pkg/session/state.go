@@ -34,7 +34,7 @@ func useGameState(c *InsimSession) {
 		c.GameState.Weather = sta.Weather
 		c.GameState.Wind = sta.Wind
 
-		c.GameState.Laps = sta.RaceLaps
+		c.GameState.Laps = sta.Laps()
 		c.GameState.Racing = sta.Racing()
 		c.GameState.QualifyingDuration = sta.QualifyingDuration()
 	})

@@ -24,11 +24,11 @@ type IrpHlr struct {
 	Spare uint8 `struct:"uint8"`
 }
 
-func (p *IrpHlr) Unmarshal(data []byte) (err error) {
+func (p *IrpHlr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpHlr) Marshal() (data []byte, err error) {
+func (p *IrpHlr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
@@ -58,11 +58,11 @@ type IrpHos struct {
 	HInfo []IrpHosInfo
 }
 
-func (p *IrpHos) Unmarshal(data []byte) (err error) {
+func (p *IrpHos) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpHos) Marshal() (data []byte, err error) {
+func (p *IrpHos) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
@@ -87,11 +87,11 @@ type IrpSel struct {
 	Spec  string `struct:"[16]byte"`
 }
 
-func (p *IrpSel) Unmarshal(data []byte) (err error) {
+func (p *IrpSel) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpSel) Marshal() (data []byte, err error) {
+func (p *IrpSel) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
@@ -131,11 +131,11 @@ func (p *IrpErr) ErrMessage() string {
 	}
 }
 
-func (p *IrpErr) Unmarshal(data []byte) (err error) {
+func (p *IrpErr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpErr) Marshal() (data []byte, err error) {
+func (p *IrpErr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

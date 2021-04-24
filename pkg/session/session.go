@@ -4,27 +4,22 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"reflect"
-	"time"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"github.com/theangryangel/insim-go/pkg/state"
 )
 
 type InsimSession struct {
-	conn   net.Conn
-	reader *bufio.Reader
-	writer *bufio.Writer
+	conn    net.Conn
+	writer  *bufio.Writer
+	scanner *bufio.Scanner
 
 	types    map[uint8]func() protocol.Packet
 	handlers map[reflect.Type][]reflect.Value
 
 	GameState state.GameState
-
-	mangled uint8
-	discard uint8
 }
 
 func NewInsimSession() *InsimSession {
@@ -44,7 +39,7 @@ func (c *InsimSession) Unmarshal(data []byte) (packet protocol.Packet, err error
 
 	if v, found := c.types[ptype]; found {
 		payload := v()
-		err := payload.Unmarshal(data[1:])
+		err := payload.UnmarshalInsim(data[1:])
 		if err != nil {
 			return nil, err
 		}
@@ -90,10 +85,22 @@ func (c *InsimSession) Use(f func(*InsimSession)) {
 
 func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.conn = conn
-	c.reader = bufio.NewReaderSize(c.conn, 8096)
+	c.scanner = bufio.NewScanner(c.conn)
+	c.scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+
+		next := int(data[0])
+
+		if next > len(data) {
+			fmt.Println("Not enough data, only", len(data), "available")
+			return 0, nil, nil
+		}
+
+		return int(next), data[0:next], nil
+	})
 	c.writer = bufio.NewWriter(c.conn)
-	c.mangled = 0
-	c.discard = 0
 
 	c.Use(useBuiltInPackets)
 	c.Use(usePing)
@@ -127,10 +134,9 @@ func (c *InsimSession) RequestState() (err error) {
 	req := protocol.NewTiny().(*protocol.Tiny)
 
 	for idx, subt := range subts {
-		req.ReqI = uint8(idx)
+		req.ReqI = uint8(idx + 1)
 		req.SubT = subt
 		err = c.Write(req)
-		fmt.Printf("Req State %d\n", subt)
 		if err != nil {
 			return err
 		}
@@ -142,7 +148,7 @@ func (c *InsimSession) RequestState() (err error) {
 func (c *InsimSession) Write(packet protocol.Packet) error {
 	// TODO: Do we need to find a way to do the 2 writes atomically?
 
-	data, err := packet.Marshal()
+	data, err := packet.MarshalInsim()
 	if err != nil {
 		return err
 	}
@@ -152,7 +158,8 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 		return errors.New("Not enough data")
 	}
 
-	length += 2 // packets dont include the size or type. we need to add to it.
+	// packets dont include the size or type. we need to add to it.
+	length += 2
 
 	err = c.writer.WriteByte(byte(length))
 	if err != nil {
@@ -173,76 +180,33 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 	return err
 }
 
-func (c *InsimSession) Read() error {
-	// TODO Remove. This is to aide debugging a potential WSL2 packetloss issue
-	if c.discard > 0 {
-		c.reader.Discard(int(c.discard))
-		c.discard = 0
-	}
+func (c *InsimSession) Scan() error {
 
-	nextByte, err := c.reader.Peek(1)
-	if err != nil {
-		return err
-	}
+	for c.scanner.Scan() {
+		buf := c.scanner.Bytes()
 
-	nextLen := uint8(nextByte[0])
-
-	if c.reader.Buffered() < int(nextLen) {
-		fmt.Printf("Needed %d, got %d, Buffer Cap %d", nextLen, c.reader.Buffered(), c.reader.Size())
-		c.mangled++
-		time.Sleep(time.Duration(c.mangled) * time.Second)
-		if c.mangled > 4 {
-			buf := make([]byte, c.reader.Buffered())
-			_, err = io.ReadFull(c.reader, buf)
-
-			fmt.Printf("Buffer: %v", buf)
-			//panic(ErrNotEnough)
-			fmt.Printf("resetting...\n")
-			c.discard = nextLen - uint8(len(buf))
-			c.mangled = 0
-			c.reader.Reset(bufio.NewReaderSize(c.conn, 8096))
-		}
-		return ErrNotEnough
-	}
-
-	buf := make([]byte, nextLen)
-	_, err = io.ReadFull(c.reader, buf)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Got: %d\n", buf[1])
-
-	packet, err := c.Unmarshal(buf[1:])
-	if err != nil {
-		return err
-	}
-
-	if packet != nil {
-		c.Call(packet)
-		return nil
-	}
-
-	return ErrNoPacket
-}
-
-func (c *InsimSession) ReadLoop() error {
-	for {
-		err := c.Read()
+		packet, err := c.Unmarshal(buf[1:])
 		if err != nil {
-
 			if err == ErrUnknownType {
-				continue
+				fmt.Println("Unknown Packet", buf[1])
+			} else {
+				return err
 			}
-
-			if err == ErrNotEnough {
-				fmt.Printf("Not enough data to read full packet\n")
-				continue
-			}
-
-			return err
 		}
+
+		if packet != nil {
+			c.Call(packet)
+			continue
+		}
+
 	}
+
+	if err := c.scanner.Err(); err != nil {
+		fmt.Printf("Invalid input: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *InsimSession) Call(data interface{}) {
@@ -252,7 +216,7 @@ func (c *InsimSession) Call(data interface{}) {
 	a1 := reflect.ValueOf(data)
 
 	for _, handler := range c.handlers[dtype] {
-		handler.Call([]reflect.Value{a0, a1})
+		go handler.Call([]reflect.Value{a0, a1})
 	}
 }
 

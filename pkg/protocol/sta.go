@@ -41,11 +41,16 @@ func (p *Sta) QualifyingDuration() time.Duration {
 	return (time.Duration(p.QualMins) * time.Minute)
 }
 
-func (p *Sta) Unmarshal(data []byte) (err error) {
+func (p *Sta) Laps() int32 {
+	// TODO decode the special rules
+	return int32(p.RaceLaps)
+}
+
+func (p *Sta) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Sta) Marshal() (data []byte, err error) {
+func (p *Sta) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

@@ -34,11 +34,11 @@ type Npl struct {
 	Spare3 uint8 `struct:"uint8"`
 }
 
-func (p *Npl) Unmarshal(data []byte) (err error) {
+func (p *Npl) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Npl) Marshal() (data []byte, err error) {
+func (p *Npl) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

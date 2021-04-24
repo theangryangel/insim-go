@@ -20,7 +20,7 @@ type Mso struct {
 	Msg       string `struct:"[]byte"`
 }
 
-func (p *Mso) Unmarshal(data []byte) (err error) {
+func (p *Mso) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (p *Mso) Unmarshal(data []byte) (err error) {
 	return err
 }
 
-func (p *Mso) Marshal() (data []byte, err error) {
+func (p *Mso) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 

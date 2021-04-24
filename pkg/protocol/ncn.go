@@ -29,11 +29,11 @@ func (p *Ncn) IsRemote() bool {
 	return false // TODO
 }
 
-func (p *Ncn) Unmarshal(data []byte) (err error) {
+func (p *Ncn) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *Ncn) Marshal() (data []byte, err error) {
+func (p *Ncn) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
