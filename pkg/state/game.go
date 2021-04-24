@@ -74,7 +74,7 @@ func (s *GameState) FromNpl(
 		v.Playername = npl.PName
 		v.Plate = npl.Plate
 		v.ConnectionId = npl.Ucid
-		v.Pitting = false
+		v.PitGarage = false
 	} else {
 		s.Players[id] = &Player{
 			Playername:   npl.PName,
@@ -109,7 +109,8 @@ func (s *GameState) FromPlp(plp *protocol.Plp) {
 	id := plp.Plid
 
 	if v, ok := s.Players[id]; ok {
-		v.Pitting = true
+		v.PitGarage = true
+		v.PitLane = false
 	}
 }
 
@@ -130,5 +131,76 @@ func (s *GameState) FromMci(mci *protocol.Mci) {
 			v.Y = info.Y
 			v.Z = info.Z
 		}
+	}
+}
+
+func (s *GameState) FromToc(toc *protocol.Toc) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := toc.Plid
+
+	if v, ok := s.Players[id]; ok {
+		v.ConnectionId = toc.NewUcid
+	}
+}
+
+func (s *GameState) FromFlg(flg *protocol.Flg) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := flg.Plid
+
+	if v, ok := s.Players[id]; ok {
+		flag, on := flg.Changed()
+
+		v.YellowFlag = (flag == protocol.FLG_YELLOW && on)
+		v.BlueFlag = (flag == protocol.FLG_BLUE && on)
+	}
+}
+
+func (s *GameState) FromSta(sta *protocol.Sta) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.Track = sta.Track
+	s.Weather = sta.Weather
+	s.Wind = sta.Wind
+
+	s.Laps = sta.Laps()
+	s.Racing = sta.Racing()
+	s.QualifyingDuration = sta.QualifyingDuration()
+}
+
+func (s *GameState) FromRst(rst *protocol.Rst) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.Track = rst.Track
+	s.Weather = rst.Weather
+	s.Wind = rst.Wind
+
+	s.Laps = rst.Laps()
+	s.Racing = rst.Racing()
+	s.QualifyingDuration = rst.QualifyingDuration()
+}
+
+func (s *GameState) FromPla(pla *protocol.Pla) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := pla.Plid
+
+	if v, ok := s.Players[id]; ok {
+		v.PitLane = pla.Entering()
 	}
 }

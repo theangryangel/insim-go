@@ -45,10 +45,24 @@ func main() {
 		fmt.Printf("Relay Error: %s\n", err.ErrMessage())
 	})
 
+	c.On(func(client *session.InsimSession, rst *protocol.Rst) {
+		if rst.Racing() {
+			fmt.Printf("Race starting on %s, weather=%d, wind=%d laps=%d\n", rst.Track, rst.Weather, rst.Wind, rst.RaceLaps)
+		}
+
+		if rst.Qualifying() {
+			fmt.Printf("Qualifying starting on %s, weather=%d, wind=%d duration=%s\n", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration)
+		}
+	})
+
 	c.On(func(client *session.InsimSession, res *protocol.Res) {
 		if player, ok := c.GameState.Players[res.Plid]; ok {
-			fmt.Printf("Result: %s position=%d,btime=%s\n", player.Playername, res.ResultNum, res.BestTime())
+			fmt.Printf("Result: %s position=%d,btime=%s,ttime=%s\n", player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
 		}
+	})
+
+	c.On(func(client *session.InsimSession, con *protocol.Con) {
+		fmt.Println("BUMP!")
 	})
 
 	go func() {

@@ -17,6 +17,7 @@ type InsimSession struct {
 	scanner *bufio.Scanner
 
 	types    map[uint8]func() protocol.Packet
+	pre      map[reflect.Type][]reflect.Value
 	handlers map[reflect.Type][]reflect.Value
 
 	GameState state.GameState
@@ -49,12 +50,34 @@ func (c *InsimSession) Unmarshal(data []byte) (packet protocol.Packet, err error
 	return nil, ErrUnknownType
 }
 
-func (c *InsimSession) On(handler interface{}) {
+func (c *InsimSession) PreOn(handler interface{}) {
+	// PreOn handlers are run synchonrously before On handlers.
+	// Think of it a bit like middleware in http servers.
+	// It's reserved for "system" level stuff, like updating state, etc.
+
 	// Warning: non-idomatic code ahead.
 	// The "right" way to do this is to have each handler do something like
 	// godiscord, or have each handler have to check the type (which would
 	// be tedious to consumers of the library).
 	// This also allows us to create non-packet pseudo-events dynamically.
+	if c.pre == nil {
+		c.pre = make(map[reflect.Type][]reflect.Value)
+	}
+
+	r := reflect.ValueOf(handler)
+	t := r.Type()
+
+	if t.Kind() != reflect.Func || t.NumIn() != 2 || t.In(0) != reflect.TypeOf(&InsimSession{}) || t.In(1).Kind() != reflect.Ptr {
+		panic("bad arg")
+	}
+
+	ptype := t.In(1)
+	c.pre[ptype] = append(c.pre[ptype], r)
+}
+
+func (c *InsimSession) On(handler interface{}) {
+	// Warning: non-idomatic code ahead.
+	// See PreOn method.
 	if c.handlers == nil {
 		c.handlers = make(map[reflect.Type][]reflect.Value)
 	}
@@ -195,6 +218,7 @@ func (c *InsimSession) Scan() error {
 		}
 
 		if packet != nil {
+			c.PreCall(packet)
 			c.Call(packet)
 			continue
 		}
@@ -207,6 +231,17 @@ func (c *InsimSession) Scan() error {
 	}
 
 	return nil
+}
+
+func (c *InsimSession) PreCall(data interface{}) {
+	// Warning: non-idomatic code. See the On method for documentation.
+	dtype := reflect.TypeOf(data)
+	a0 := reflect.ValueOf(c)
+	a1 := reflect.ValueOf(data)
+
+	for _, handler := range c.pre[dtype] {
+		handler.Call([]reflect.Value{a0, a1})
+	}
 }
 
 func (c *InsimSession) Call(data interface{}) {

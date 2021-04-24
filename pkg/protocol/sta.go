@@ -37,12 +37,12 @@ func (p *Sta) Racing() bool {
 }
 
 func (p *Sta) QualifyingDuration() time.Duration {
-	// TODO decode the special rules
+	// TODO decode the special rules - should be shared with RST
 	return (time.Duration(p.QualMins) * time.Minute)
 }
 
 func (p *Sta) Laps() int32 {
-	// TODO decode the special rules
+	// TODO decode the special rules - should be shared with RST
 	return int32(p.RaceLaps)
 }
 
