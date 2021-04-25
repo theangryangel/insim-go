@@ -51,7 +51,7 @@ func main() {
 		}
 
 		if rst.Qualifying() {
-			fmt.Printf("Qualifying starting on %s, weather=%d, wind=%d duration=%s\n", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration)
+			fmt.Printf("Qualifying starting on %s, weather=%d, wind=%d duration=%s\n", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration())
 		}
 	})
 
