@@ -32,11 +32,16 @@ func Decode(data []byte) (string, error) {
 
 	// TODO: Add unit tests
 
+	// TODO: Ignore escaped characters
+
 	output := ""
 	cp := codepages['L']
 	buf := bytes.NewBuffer(nil)
 
 	for i := 0; i < len(data); i++ {
+		if data[i] == 0 {
+			break
+		}
 
 		if data[i] == '^' && i+1 < len(data) {
 			next_cp, ok := codepages[data[i+1]]

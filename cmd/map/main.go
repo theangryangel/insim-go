@@ -10,10 +10,13 @@ import (
 	"github.com/theangryangel/insim-go/pkg/session"
 	"github.com/theangryangel/insim-go/pkg/strings"
 
+	"encoding/json"
+
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 )
 
 func main() {
@@ -29,9 +32,24 @@ func main() {
 
 	c := session.NewInsimSession()
 
+	s := newStreamHub()
+
+	c.On(func(client *session.InsimSession, mci *protocol.Mci) {
+		for _, info := range mci.Info {
+			data, err := json.Marshal(info)
+			if err != nil {
+				panic(err)
+			}
+			s.publish(data)
+		}
+	})
+
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
 		if player, ok := c.GameState.Players[mso.Plid]; ok {
-			fmt.Printf("Msg: %s: %s\n", strings.StripColours(player.Playername), strings.StripColours(mso.Msg))
+			data := fmt.Sprintf("Chat: %s: %s", strings.StripColours(player.Playername), strings.StripColours(mso.Msg))
+			fmt.Println(data)
+
+			s.publish([]byte(data))
 		}
 	})
 
@@ -48,22 +66,34 @@ func main() {
 
 	c.On(func(client *session.InsimSession, rst *protocol.Rst) {
 		if rst.Racing() {
-			fmt.Printf("Race starting on %s, weather=%d, wind=%d laps=%d\n", rst.Track, rst.Weather, rst.Wind, rst.RaceLaps)
+			data := fmt.Sprintf("Event: Race starting on %s weather=%d,wind=%d,laps=%d", rst.Track, rst.Weather, rst.Wind, rst.RaceLaps)
+			fmt.Println(data)
+			s.publish([]byte(data))
 		}
 
 		if rst.Qualifying() {
-			fmt.Printf("Qualifying starting on %s, weather=%d, wind=%d duration=%s\n", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration())
+			data := fmt.Sprintf("Event: Qualifying starting on %s weather=%d,wind=%d,duration=%s", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration())
+			fmt.Println(data)
+			s.publish([]byte(data))
 		}
 	})
 
 	c.On(func(client *session.InsimSession, res *protocol.Res) {
 		if player, ok := c.GameState.Players[res.Plid]; ok {
-			fmt.Printf("Result: %s position=%d,btime=%s,ttime=%s\n", player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
+			data := fmt.Sprintf("Result: %s position=%d,btime=%s,ttime=%s", player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
+			fmt.Println(data)
+			s.publish([]byte(data))
 		}
 	})
 
 	c.On(func(client *session.InsimSession, con *protocol.Con) {
-		fmt.Println("BUMP!")
+		a, aok := c.GameState.Players[con.A.Plid]
+		b, bok := c.GameState.Players[con.B.Plid]
+
+		if aok && bok {
+			data := fmt.Sprintf("BUMP: %s and %s", strings.StripColours(a.Playername), strings.StripColours(b.Playername))
+			s.publish([]byte(data))
+		}
 	})
 
 	go func() {
@@ -94,26 +124,29 @@ func main() {
 		}
 	}()
 
-	// Echo instance
-	e := echo.New()
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
+	r.Use(render.SetContentType(render.ContentTypeJSON))
 
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	fs := http.FileServer(http.Dir("./static"))
+	r.Method("GET", "/", fs)
 
-	e.GET("/api/connections", func(ec echo.Context) error {
-		return ec.JSON(http.StatusOK, c.GameState.Connections)
+	r.Get("/subscribe", s.subscribeHandler)
+
+	r.Get("/api/connections", func(w http.ResponseWriter, r *http.Request) {
+		render.JSON(w, r, c.GameState.Connections)
 	})
 
-	e.GET("/api/players", func(ec echo.Context) error {
-		return ec.JSON(http.StatusOK, c.GameState.Players)
+	r.Get("/api/players", func(w http.ResponseWriter, r *http.Request) {
+		render.JSON(w, r, c.GameState.Players)
 	})
 
-	e.GET("/api/state", func(ec echo.Context) error {
-		return ec.JSON(http.StatusOK, c.GameState)
+	r.Get("/api/state", func(w http.ResponseWriter, r *http.Request) {
+		render.JSON(w, r, c.GameState)
 	})
 
-	e.Static("/", "static")
-
-	e.Logger.Fatal(e.Start("0.0.0.0:4000"))
+	http.ListenAndServe(":4000", r)
 }

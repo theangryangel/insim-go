@@ -9,16 +9,76 @@
       var app = new Vue({
         el: "#app",
         data: {
-          message: "Hello Vue!",
+          state: {
+            Players: [],
+          },
+          messages: [],
+          max: 10,
+          ws: null,
+        },
+        computed: {
+          players: function () {
+            return Object.values(this.state.Players).sort(function (a, b) {
+              return a.RacePosition - b.RacePosition;
+            });
+          },
+        },
+        methods: {
+          dial: function () {
+            this.ws = new WebSocket(`ws://${document.location.host}/subscribe`);
+
+            this.ws.addEventListener("close", (ev) => {
+              console.log(
+                `WebSocket Disconnected code: ${ev.code}, reason: ${ev.reason}`,
+                true
+              );
+              if (ev.code !== 1001) {
+                console.log("Reconnecting in 1s", true);
+                setTimeout(this.dial, 1000);
+              }
+            });
+            this.ws.addEventListener("open", (ev) => {
+              console.info("websocket connected");
+              this.initialState();
+            });
+
+            // This is where we handle messages received.
+            this.ws.addEventListener("message", (ev) => {
+              if (typeof ev.data !== "string") {
+                console.error("unexpected message type", typeof ev.data);
+                return;
+              }
+              console.log(ev);
+              this.pushMsg(ev.data);
+            });
+          },
+          pushMsg: function (msg) {
+            this.messages.unshift(msg);
+            while (this.messages.length >= this.max) {
+              this.messages.pop();
+            }
+          },
+          initialState: function () {
+            fetch("/api/state")
+              .then((res) => {
+                return res.json();
+              })
+              .then((res) => {
+                this.state = res;
+              });
+          },
+        },
+        created: function () {
+          this.dial();
         },
       });
     </script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <style type="text/css" media="screen">
       html,
       body {
         margin: 0;
-        font-family: -apple-system, "BlinkMacSystemFont", "Helvetica Neue",
-          "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Open Sans", sans-serif;
+        font-family: "Inter var";
         display: flex;
 
         height: 100vh;
@@ -50,8 +110,19 @@
   </head>
   <body>
     <div id="app">
-      <div class="players" id="players"></div>
-      <div class="map" id="map">{{ message }}</div>
+      <div class="players" id="players">
+        <ul>
+          <li v-for="(item, _index) in players">
+            {{ item.Playername }} {{ item.RacePosition }} {{ item.RaceLap }} /
+            {{ state.Laps }}
+          </li>
+        </ul>
+      </div>
+      <div class="map" id="map">
+        <ul>
+          <li v-for="(item, _index) in messages">{{ item }}</li>
+        </ul>
+      </div>
     </div>
   </body>
 </html>
