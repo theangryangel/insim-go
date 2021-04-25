@@ -34,4 +34,6 @@ func useBuiltInPackets(c *InsimSession) {
 	c.RegisterPacket(protocol.ISP_FLG, protocol.NewFlg)
 	c.RegisterPacket(protocol.ISP_PLA, protocol.NewPla)
 	c.RegisterPacket(protocol.ISP_CON, protocol.NewCon)
+
+	c.RegisterPacket(protocol.ISP_VTN, protocol.NewVtn)
 }

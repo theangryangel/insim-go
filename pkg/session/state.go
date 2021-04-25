@@ -48,4 +48,16 @@ func useGameState(c *InsimSession) {
 	c.PreOn(func(c *InsimSession, sta *protocol.Sta) {
 		c.GameState.FromSta(sta)
 	})
+
+	c.PreOn(func(c *InsimSession, vtn *protocol.Vtn) {
+		c.GameState.FromVtn(vtn)
+	})
+
+	c.PreOn(func(c *InsimSession, vtn *protocol.Tiny) {
+		c.GameState.FromTiny(vtn)
+	})
+
+	c.PreOn(func(c *InsimSession, vtn *protocol.Small) {
+		c.GameState.FromSmall(vtn)
+	})
 }

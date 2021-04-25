@@ -8,6 +8,7 @@ import (
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"github.com/theangryangel/insim-go/pkg/session"
+	"github.com/theangryangel/insim-go/pkg/strings"
 
 	"net/http"
 
@@ -30,7 +31,7 @@ func main() {
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
 		if player, ok := c.GameState.Players[mso.Plid]; ok {
-			fmt.Printf("Msg: %s: %s\n", player.Playername, mso.Msg)
+			fmt.Printf("Msg: %s: %s\n", strings.StripColours(player.Playername), strings.StripColours(mso.Msg))
 		}
 	})
 

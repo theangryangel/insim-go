@@ -14,6 +14,7 @@ type GameState struct {
 	Wind               uint8
 	Laps               int32
 	Racing             bool
+	Voting             bool
 	QualifyingDuration time.Duration
 
 	Connections map[uint8]*Connection
@@ -202,5 +203,31 @@ func (s *GameState) FromPla(pla *protocol.Pla) {
 
 	if v, ok := s.Players[id]; ok {
 		v.PitLane = pla.Entering()
+	}
+}
+
+func (s *GameState) FromVtn(vtn *protocol.Vtn) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.Voting = vtn.Voting()
+}
+
+func (s *GameState) FromTiny(tiny *protocol.Tiny) {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if tiny.SubT == protocol.TINY_VTC {
+		s.Voting = false
+	}
+}
+
+func (s *GameState) FromSmall(small *protocol.Small) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if small.SubT == protocol.SMALL_VTA {
+		s.Voting = false
 	}
 }

@@ -2,6 +2,7 @@ package strings
 
 import (
 	"bytes"
+	"regexp"
 
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
@@ -72,4 +73,14 @@ func Decode(data []byte) (string, error) {
 	}
 
 	return output, nil
+}
+
+func Unescape(data string) string {
+	// TODO
+	return data
+}
+
+func StripColours(data string) string {
+	re := regexp.MustCompile(`\^[0-9]`)
+	return re.ReplaceAllString(data, "")
 }
