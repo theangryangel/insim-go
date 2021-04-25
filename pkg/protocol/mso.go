@@ -3,6 +3,8 @@ package protocol
 import (
 	"encoding/binary"
 	"github.com/go-restruct/restruct"
+
+	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
 const (
@@ -13,11 +15,11 @@ type Mso struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
 
-	Ucid      uint8  `struct:"uint8"`
-	Plid      uint8  `struct:"uint8"`
-	UserType  uint8  `struct:"uint8"`
-	TextStart uint8  `struct:"uint8"`
-	Msg       string `struct:"[]byte"`
+	Ucid      uint8 `struct:"uint8"`
+	Plid      uint8 `struct:"uint8"`
+	UserType  uint8 `struct:"uint8"`
+	TextStart uint8 `struct:"uint8"`
+	Msg       string
 }
 
 func (p *Mso) UnmarshalInsim(data []byte) (err error) {
@@ -27,7 +29,11 @@ func (p *Mso) UnmarshalInsim(data []byte) (err error) {
 	}
 
 	start := p.TextStart + 6
-	p.Msg = string(data[start:])
+	p.Msg, err = strings.Decode(data[start:])
+	//p.Msg = string(data[start:])
+	if err != nil {
+		return err
+	}
 	return err
 }
 

@@ -2,7 +2,9 @@ package protocol
 
 import (
 	"encoding/binary"
+
 	"github.com/go-restruct/restruct"
+	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
 const (
@@ -30,7 +32,22 @@ func (p *Ncn) IsRemote() bool {
 }
 
 func (p *Ncn) UnmarshalInsim(data []byte) (err error) {
-	return restruct.Unpack(data, binary.LittleEndian, p)
+	err = restruct.Unpack(data, binary.LittleEndian, p)
+	if err != nil {
+		return err
+	}
+
+	p.PName, err = strings.Decode([]byte(p.PName))
+	if err != nil {
+		return err
+	}
+
+	p.UName, err = strings.Decode([]byte(p.UName))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Ncn) MarshalInsim() (data []byte, err error) {

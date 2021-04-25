@@ -3,6 +3,8 @@ package protocol
 import (
 	"encoding/binary"
 	"github.com/go-restruct/restruct"
+
+	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
 const (
@@ -35,7 +37,22 @@ type Npl struct {
 }
 
 func (p *Npl) UnmarshalInsim(data []byte) (err error) {
-	return restruct.Unpack(data, binary.LittleEndian, p)
+	err = restruct.Unpack(data, binary.LittleEndian, p)
+	if err != nil {
+		return err
+	}
+
+	p.PName, err = strings.Decode([]byte(p.PName))
+	if err != nil {
+		return err
+	}
+
+	p.Plate, err = strings.Decode([]byte(p.Plate))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Npl) MarshalInsim() (data []byte, err error) {
