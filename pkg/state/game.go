@@ -76,11 +76,16 @@ func (s *GameState) FromNpl(
 		v.Plate = npl.Plate
 		v.ConnectionId = npl.Ucid
 		v.PitGarage = false
+		v.RaceFinished = false
+		v.TTime = time.Duration(0)
+		v.BTime = time.Duration(0)
+		v.Vehicle = npl.CName
 	} else {
 		s.Players[id] = &Player{
 			Playername:   npl.PName,
 			Plate:        npl.Plate,
 			ConnectionId: npl.Ucid,
+			Vehicle:      npl.CName,
 		}
 	}
 	s.mu.Unlock()
@@ -112,6 +117,9 @@ func (s *GameState) FromPlp(plp *protocol.Plp) {
 	if v, ok := s.Players[id]; ok {
 		v.PitGarage = true
 		v.PitLane = false
+		if !v.RaceFinished {
+			v.RacePosition = 0
+		}
 	}
 }
 
@@ -125,9 +133,12 @@ func (s *GameState) FromMci(mci *protocol.Mci) {
 	for _, info := range mci.Info {
 
 		if v, ok := s.Players[info.Plid]; ok {
+			if !v.RaceFinished {
+				v.RacePosition = info.Position
+				v.RaceLap = info.Lap
+			}
+
 			v.Speed = info.Speed
-			v.RacePosition = info.Position
-			v.RaceLap = info.Lap
 			v.X = info.X
 			v.Y = info.Y
 			v.Z = info.Z
@@ -190,6 +201,12 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 	s.Laps = rst.Laps()
 	s.Racing = rst.Racing()
 	s.QualifyingDuration = rst.QualifyingDuration()
+
+	for _, p := range s.Players {
+		p.RaceFinished = false
+		p.BTime = time.Duration(0)
+		p.TTime = time.Duration(0)
+	}
 }
 
 func (s *GameState) FromPla(pla *protocol.Pla) {
@@ -229,5 +246,59 @@ func (s *GameState) FromSmall(small *protocol.Small) {
 
 	if small.SubT == protocol.SMALL_VTA {
 		s.Voting = false
+	}
+}
+
+func (s *GameState) FromFin(fin *protocol.Fin) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := fin.Plid
+
+	if v, ok := s.Players[id]; ok {
+		v.RaceFinished = true
+		v.TTime = fin.TotalTime()
+		v.BTime = fin.BestTime()
+	}
+}
+
+func (s *GameState) FromRes(fin *protocol.Res) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := fin.Plid
+
+	if v, ok := s.Players[id]; ok {
+		v.RaceFinished = true
+		v.RacePosition = fin.ResultNum
+		v.TTime = fin.TotalTime()
+		v.BTime = fin.BestTime()
+	}
+}
+
+func (s *GameState) FromLap(lap *protocol.Lap) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := lap.Plid
+
+	if v, ok := s.Players[id]; ok {
+		if !v.RaceFinished {
+			v.TTime = lap.ElapsedTime()
+
+			if v.BTime.Nanoseconds() <= 0 || lap.LapTime() < v.BTime {
+				v.BTime = lap.LapTime()
+			}
+
+		}
 	}
 }

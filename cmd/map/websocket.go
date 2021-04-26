@@ -2,15 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 // chatServer enables broadcasting to a set of subscribers.
@@ -22,11 +20,6 @@ type StreamHub struct {
 	// Defaults to 16.
 	subscriberMessageBuffer int
 
-	// publishLimiter controls the rate limit applied to the publish endpoint.
-	//
-	// Defaults to one publish every 100ms with a burst of 8.
-	publishLimiter *rate.Limiter
-
 	// serveMux routes the various endpoints to the appropriate handler.
 	serveMux http.ServeMux
 
@@ -37,9 +30,8 @@ type StreamHub struct {
 // newChatServer constructs a chatServer with the defaults.
 func newStreamHub() *StreamHub {
 	cs := &StreamHub{
-		subscriberMessageBuffer: 16,
+		subscriberMessageBuffer: 256,
 		subscribers:             make(map[*subscriber]struct{}),
-		publishLimiter:          rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
 	}
 
 	return cs
@@ -108,18 +100,32 @@ func (cs *StreamHub) subscribe(ctx context.Context, c *websocket.Conn) error {
 	}
 }
 
+type event struct {
+	Type    string
+	Payload interface{}
+}
+
 // publish publishes the msg to all subscribers.
 // It never blocks and so messages to slow subscribers
 // are dropped.
-func (cs *StreamHub) publish(msg []byte) {
+func (cs *StreamHub) publish(mtype string, payload interface{}) {
 	cs.subscribersMu.Lock()
 	defer cs.subscribersMu.Unlock()
 
-	cs.publishLimiter.Wait(context.Background())
+	msg := event{
+		Type:    mtype,
+		Payload: payload,
+	}
+
+	data, err := json.Marshal(msg)
+
+	if err != nil {
+		panic(err)
+	}
 
 	for s := range cs.subscribers {
 		select {
-		case s.msgs <- msg:
+		case s.msgs <- data:
 		default:
 			go s.closeSlow()
 		}
@@ -143,6 +149,9 @@ func (cs *StreamHub) deleteSubscriber(s *subscriber) {
 func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn, msg []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	// TODO use wsjson and convert everything automatically
+	// will need publish to be updated
 
 	return c.Write(ctx, websocket.MessageText, msg)
 }
