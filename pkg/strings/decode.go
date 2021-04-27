@@ -12,6 +12,19 @@ import (
 	"golang.org/x/text/encoding/traditionalchinese"
 )
 
+var esc map[byte]byte = map[byte]byte{
+	'v': '|',
+	'a': '*',
+	'c': ':',
+	'd': '\\',
+	's': '/',
+	'q': '?',
+	't': '"',
+	'l': '<',
+	'r': '>',
+	'^': '^',
+}
+
 // These aren't 100% accurate, but the closest I can be bothered getting
 var codepages map[byte]*encoding.Decoder = map[byte]*encoding.Decoder{
 	'L': charmap.ISO8859_1.NewDecoder(),
@@ -32,8 +45,6 @@ func Decode(data []byte) (string, error) {
 
 	// TODO: Add unit tests
 
-	// TODO: Ignore escaped characters
-
 	output := ""
 	cp := codepages['L']
 	buf := bytes.NewBuffer(nil)
@@ -44,8 +55,7 @@ func Decode(data []byte) (string, error) {
 		}
 
 		if data[i] == '^' && i+1 < len(data) {
-			next_cp, ok := codepages[data[i+1]]
-			if ok {
+			if next_cp, ok := codepages[data[i+1]]; ok {
 
 				if buf.Len() > 0 {
 
@@ -60,6 +70,12 @@ func Decode(data []byte) (string, error) {
 
 				cp = next_cp
 				i++
+				continue
+			}
+
+			if next_esc, ok := esc[data[i+1]]; ok {
+				buf.WriteByte(next_esc)
+				i += 2
 				continue
 			}
 		}
@@ -78,11 +94,6 @@ func Decode(data []byte) (string, error) {
 	}
 
 	return output, nil
-}
-
-func Unescape(data string) string {
-	// TODO
-	return data
 }
 
 func StripColours(data string) string {
