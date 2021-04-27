@@ -332,7 +332,7 @@ func (s *GameState) FromSpx(spx *protocol.Spx) {
 
 func (s *GameState) UpdateGaps(plid uint8, spx uint8) {
 	// TODO Fix "65534 laps" bug
-	// probably just a logic error
+	// probably just a logic error around the "4th" split or "lap"
 
 	player, ok := s.Players[plid]
 	if !ok {
