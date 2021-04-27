@@ -3,12 +3,12 @@
   import { onMount } from 'svelte';
 
     let state = {
+        Track: {},
         Players: {},
         Connections: {},
         Laps: 0,
       };
 
-    const maxMessages = 10;
     let messages = [];
 
     let ws = null;
@@ -127,6 +127,7 @@
       <table>
         <thead>
           <tr>
+            <th></th>
             <th>#</th>
             <th>Driver<br><small>Car</small></th>
             <th>Lap</th>
@@ -139,6 +140,11 @@
         <tbody class="">
           {#each Object.values(state.Players).filter((a) => { return a.RacePosition > 0; }).sort((a, b) => { return a.RacePosition - b.RacePosition; }) as player}
             <tr>
+              <td>
+                {#if player.RaceFinished}
+                  🏁
+                {/if}
+              </td>
               <td>{player.RacePosition}
               </td>
               <td>{player.Playername}<br><small>{player.Vehicle}</small></td>
@@ -149,14 +155,12 @@
                   {player.RaceLap} / {state.Laps}
                 {/if}
                 <br>
-                <small>{player.X}, {player.Y}, {player.Z}</small>
-                <br>
-                <small>{player.Speed}</small>
+                <small>{JSON.stringify(player.Position)}</small>
                 <br>
                 <small>Pitlane: {player.PitLane}</small>
               </td>
-              <td>???</td>
-              <td>-</td>
+              <td>{player.NumStops}</td>
+              <td>{JSON.stringify(player.Gaps)}</td>
               <td>{player.BTime}</td>
               <td>{player.TTime}</td>
             </tr>
@@ -178,6 +182,6 @@
     </div>
   </div>
   <footer class="Map-footer">
-    footer
+    Track: {state.Track.Name} ({state.Track.Code}), Weather: {state.Weather}, Wind: {state.Wind}
   </footer>
 </div>

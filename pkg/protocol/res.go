@@ -37,6 +37,10 @@ type Res struct {
 	PSeconds uint16 `struct:"uint16"`
 }
 
+func (p *Res) RacePosition() uint8 {
+	return p.ResultNum + 1
+}
+
 func (p *Res) TotalTime() time.Duration {
 	return (time.Duration(p.TTime) * time.Millisecond)
 }

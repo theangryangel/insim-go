@@ -45,6 +45,10 @@ func useGameState(c *InsimSession) {
 		c.GameState.FromRst(rst)
 	})
 
+	c.PreOn(func(c *InsimSession, spx *protocol.Spx) {
+		c.GameState.FromSpx(spx)
+	})
+
 	c.PreOn(func(c *InsimSession, lap *protocol.Lap) {
 		c.GameState.FromLap(lap)
 	})

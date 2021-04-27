@@ -1,6 +1,8 @@
 package state
 
 import (
+	"fmt"
+	"github.com/theangryangel/insim-go/pkg/facts"
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"sync"
 	"time"
@@ -9,7 +11,11 @@ import (
 type GameState struct {
 	mu sync.Mutex
 
-	Track              string
+	// TODO are these more like something an event state?
+	// probably. What does that look like?
+
+	// Fastest time/player?
+	Track              *facts.Track
 	Weather            uint8
 	Wind               uint8
 	Laps               int32
@@ -17,6 +23,8 @@ type GameState struct {
 	Voting             bool
 	QualifyingDuration time.Duration
 
+	// TODO could do with a ConnectionList and PlayerList type to move some of these functions info
+	// Would allow less locking of the whole GameState
 	Connections map[uint8]*Connection
 	Players     map[uint8]*Player
 }
@@ -65,6 +73,7 @@ func (s *GameState) FromNpl(
 	npl *protocol.Npl,
 ) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.Players == nil {
 		s.Players = make(map[uint8]*Player)
 	}
@@ -75,11 +84,8 @@ func (s *GameState) FromNpl(
 		v.Playername = npl.PName
 		v.Plate = npl.Plate
 		v.ConnectionId = npl.Ucid
-		v.PitGarage = false
-		v.RaceFinished = false
-		v.TTime = time.Duration(0)
-		v.BTime = time.Duration(0)
 		v.Vehicle = npl.CName
+		v.Reset()
 	} else {
 		s.Players[id] = &Player{
 			Playername:   npl.PName,
@@ -88,7 +94,6 @@ func (s *GameState) FromNpl(
 			Vehicle:      npl.CName,
 		}
 	}
-	s.mu.Unlock()
 }
 
 func (s *GameState) FromPll(pll *protocol.Pll) {
@@ -138,10 +143,10 @@ func (s *GameState) FromMci(mci *protocol.Mci) {
 				v.RaceLap = info.Lap
 			}
 
-			v.Speed = info.Speed
-			v.X = info.X
-			v.Y = info.Y
-			v.Z = info.Z
+			v.Position.Speed = info.Speed
+			v.Position.X = info.X
+			v.Position.Y = info.Y
+			v.Position.Z = info.Z
 		}
 	}
 }
@@ -181,7 +186,7 @@ func (s *GameState) FromSta(sta *protocol.Sta) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Track = sta.Track
+	s.Track = facts.TrackFromCode(sta.Track)
 	s.Weather = sta.Weather
 	s.Wind = sta.Wind
 
@@ -194,7 +199,7 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Track = rst.Track
+	s.Track = facts.TrackFromCode(rst.Track)
 	s.Weather = rst.Weather
 	s.Wind = rst.Wind
 
@@ -206,6 +211,8 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 		p.RaceFinished = false
 		p.BTime = time.Duration(0)
 		p.TTime = time.Duration(0)
+
+		p.Gaps.Reset()
 	}
 }
 
@@ -276,7 +283,7 @@ func (s *GameState) FromRes(fin *protocol.Res) {
 
 	if v, ok := s.Players[id]; ok {
 		v.RaceFinished = true
-		v.RacePosition = fin.ResultNum
+		v.RacePosition = fin.RacePosition()
 		v.TTime = fin.TotalTime()
 		v.BTime = fin.BestTime()
 	}
@@ -299,6 +306,67 @@ func (s *GameState) FromLap(lap *protocol.Lap) {
 				v.BTime = lap.LapTime()
 			}
 
+			// we consider the lap to be the 4th "split"
+			v.Gaps.Update(facts.MaxSplitCount, v.RaceLap, lap.ElapsedTime())
+			s.UpdateGaps(id, facts.MaxSplitCount)
+
+		}
+		v.NumStops = uint32(lap.NumStops)
+	}
+}
+
+func (s *GameState) FromSpx(spx *protocol.Spx) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	id := spx.Plid
+
+	if v, ok := s.Players[id]; ok {
+		v.Gaps.Update(spx.Split-1, v.RaceLap, spx.ElapsedTime())
+		s.UpdateGaps(id, spx.Split-1)
+	}
+}
+
+func (s *GameState) UpdateGaps(plid uint8, spx uint8) {
+	// TODO Fix "65534 laps" bug
+	// probably just a logic error
+
+	player, ok := s.Players[plid]
+	if !ok {
+		return
+	}
+
+	if player.RacePosition == 0 || player.RaceFinished {
+		// we don't update the gap if they're fresh out of the garage or they're finished the race
+		return
+	}
+
+	for oplid, oplayer := range s.Players {
+		if oplid == plid {
+			continue
+		}
+
+		if player.RacePosition == oplayer.RacePosition+1 {
+			// find the player in front of us
+
+			if player.Gaps.Lap[spx] == oplayer.Gaps.Lap[spx] {
+				// are they are on the same lap?
+				gap := (oplayer.Gaps.Duration[spx] - player.Gaps.Duration[spx])
+				player.Gaps.Next = gap.String()
+				oplayer.Gaps.Prev = (-1 * gap).String()
+			} else {
+				gap := int32(player.Gaps.Lap[spx] - oplayer.Gaps.Lap[spx])
+				player.Gaps.Next = fmt.Sprintf("%d laps", gap)
+				oplayer.Gaps.Prev = fmt.Sprintf("%d laps", -1*gap)
+			}
+
+			return
 		}
 	}
+
+	player.Gaps.Next = ""
+	player.Gaps.Prev = ""
 }
