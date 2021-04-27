@@ -186,7 +186,12 @@ func (s *GameState) FromSta(sta *protocol.Sta) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Track = facts.TrackFromCode(sta.Track)
+	track, err := facts.TrackFromCode(sta.Track)
+	if err != nil {
+		panic(err)
+	}
+
+	s.Track = track
 	s.Weather = sta.Weather
 	s.Wind = sta.Wind
 
@@ -199,7 +204,12 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Track = facts.TrackFromCode(rst.Track)
+	track, err := facts.TrackFromCode(rst.Track)
+	if err != nil {
+		panic(err)
+	}
+
+	s.Track = track
 	s.Weather = rst.Weather
 	s.Wind = rst.Wind
 
