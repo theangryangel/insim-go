@@ -95,3 +95,30 @@ func (p *Pth) Read(file string) (err error) {
 
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
+
+func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
+
+	minx := float64(0.0)
+	miny := float64(0.0)
+	maxx := float64(0.0)
+	maxy := float64(0.0)
+
+	for _, node := range p.Nodes {
+		llx, lly, lrx, lry := node.OuterLimits(metres)
+
+		minx = math.Min(minx, llx)
+		minx = math.Min(minx, lrx)
+
+		maxx = math.Max(maxx, llx)
+		maxx = math.Max(maxx, lrx)
+
+		miny = math.Min(miny, lly)
+		miny = math.Min(miny, lry)
+
+		maxy = math.Max(maxy, lly)
+		maxy = math.Max(maxy, lry)
+	}
+
+	return minx, miny, maxx, maxy
+
+}

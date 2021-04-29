@@ -1,3 +1,4 @@
 node_modules/
 cmd/map/static/
 *.pth
+cmd/pth/*.svg

@@ -7,9 +7,7 @@ import (
 	"fmt"
 	svg "github.com/ajstarks/svgo/float"
 	"github.com/theangryangel/insim-go/pkg/files"
-	"math"
 	"os"
-	"path"
 )
 
 func main() {
@@ -26,7 +24,12 @@ func main() {
 	flag.Parse()
 
 	p := files.Pth{}
-	p.Read(path.Join("data", fmt.Sprintf("%s.pth", *file)))
+
+	if _, err := os.Stat(*file); os.IsNotExist(err) {
+		panic(err)
+	}
+
+	p.Read(*file)
 
 	var roadCX []float64
 	var roadCY []float64
@@ -43,11 +46,7 @@ func main() {
 	var outerRX []float64
 	var outerRY []float64
 
-	var minX float64 = 0
-	var maxX float64 = 0
-
-	var minY float64 = 0
-	var maxY float64 = 0
+	minX, minY, maxX, maxY := p.OuterBounds(true)
 
 	for i, j := 0, len(p.Nodes)-1; i < len(p.Nodes) && j > 0; i, j = i+1, j-1 {
 
@@ -79,26 +78,6 @@ func main() {
 
 		outerRX = append(outerRX, lrx)
 		outerRY = append(outerRY, lry)
-
-		maxX = math.Max(maxX, rlx)
-		maxX = math.Max(maxX, rrx)
-		maxX = math.Max(maxX, llx)
-		maxX = math.Max(maxX, lrx)
-
-		minX = math.Min(minX, rlx)
-		minX = math.Min(minX, rrx)
-		minX = math.Min(minX, llx)
-		minX = math.Min(minX, lrx)
-
-		maxY = math.Max(maxY, rly)
-		maxY = math.Max(maxY, rry)
-		maxY = math.Max(maxY, lly)
-		maxY = math.Max(maxY, lry)
-
-		minY = math.Min(minY, rly)
-		minY = math.Min(minY, rry)
-		minY = math.Min(minY, lly)
-		minY = math.Min(minY, lry)
 	}
 
 	lastnode := p.Nodes[0]
