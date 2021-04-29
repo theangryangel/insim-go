@@ -46,9 +46,9 @@ func main() {
 	var outerRX []float64
 	var outerRY []float64
 
-	minX, minY, maxX, maxY := p.OuterBounds(true)
+	scalex, scaley, translatex, translatey := p.GenerateScaleTransform(*imageWidth, *imageHeight)
 
-	for i, j := 0, len(p.Nodes)-1; i < len(p.Nodes) && j > 0; i, j = i+1, j-1 {
+	for i := 0; i < len(p.Nodes); i++ {
 
 		if *resolution > 0 && i%*resolution != 0 {
 			continue
@@ -58,68 +58,48 @@ func main() {
 
 		rcx, rcy := node.RoadCentre(true)
 
-		roadCX = append(roadCX, rcx)
-		roadCY = append(roadCY, rcy)
+		roadCX = append(roadCX, rcx * scalex * translatex)
+		roadCY = append(roadCY, rcy * scaley * translatey)
 
 		// calc road
 		rlx, rly, rrx, rry := node.RoadLimits(true)
 
-		roadLX = append(roadLX, rlx)
-		roadLY = append(roadLY, rly)
+		roadLX = append(roadLX, rlx * scalex + translatex)
+		roadLY = append(roadLY, rly * scaley + translatey)
 
-		roadRX = append(roadRX, rrx)
-		roadRY = append(roadRY, rry)
+		roadRX = append(roadRX, rrx * scalex + translatex)
+		roadRY = append(roadRY, rry * scaley + translatey)
 
 		// calc limit
 		llx, lly, lrx, lry := node.OuterLimits(true)
 
-		outerLX = append(outerLX, llx)
-		outerLY = append(outerLY, lly)
+		outerLX = append(outerLX, llx * scalex + translatex)
+		outerLY = append(outerLY, lly * scaley + translatey)
 
-		outerRX = append(outerRX, lrx)
-		outerRY = append(outerRY, lry)
+		outerRX = append(outerRX, lrx * scalex + translatex)
+		outerRY = append(outerRY, lry * scaley + translatey)
 	}
 
-	lastnode := p.Nodes[0]
+	// copy the first node to close the loop
 
-	rcx, rcy := lastnode.RoadCentre(true)
+	roadCX = append(roadCX, roadCX[0])
+	roadCY = append(roadCY, roadCY[0])
 
-	roadCX = append(roadCX, rcx)
-	roadCY = append(roadCY, rcy)
+	roadLX = append(roadLX, roadLX[0])
+	roadLY = append(roadLY, roadLY[0])
 
-	rlx, rly, rrx, rry := lastnode.RoadLimits(true)
+	roadRX = append(roadRX, roadRX[0])
+	roadRY = append(roadRY, roadRY[0])
 
-	roadLX = append(roadLX, rlx)
-	roadLY = append(roadLY, rly)
+	outerLX = append(outerLX, outerLX[0])
+	outerLY = append(outerLY, outerLY[0])
 
-	roadRX = append(roadRX, rrx)
-	roadRY = append(roadRY, rry)
-
-	// calc limit
-	llx, lly, lrx, lry := lastnode.OuterLimits(true)
-
-	outerLX = append(outerLX, llx)
-	outerLY = append(outerLY, lly)
-
-	outerRX = append(outerRX, lrx)
-	outerRY = append(outerRY, lry)
+	outerRX = append(outerRX, outerRX[0])
+	outerRY = append(outerRY, outerRY[0])
 
 	s := svg.New(os.Stdout)
 
-	disX := maxX - minX
-	disY := maxY - minY
-
-	// we use viewbox to scale so we dont have to scale the coordinates by hand
-	// this means our text will be wonky sized. boo.
-	viewBox := fmt.Sprintf(
-		"viewBox=\"%.2f %.2f %.2f %.2f\"",
-		minX-(0.01*disX),
-		minY-(0.01*disY),
-		disX+(0.02*disX),
-		disY+(0.02*disY),
-	)
-
-	s.Start(*imageWidth, *imageHeight, viewBox)
+	s.Start(*imageWidth, *imageHeight, "style=\"border: 1px solid red\"")
 
 	s.Polygon(
 		append(outerLX, outerRX...),
@@ -133,6 +113,11 @@ func main() {
 	)
 
 	flx, fly, frx, fry := p.Nodes[p.FinishLine].RoadLimits(true)
+
+	flx = flx * scalex + translatex
+	fly = fly * scaley + translatey
+	frx = frx * scalex + translatex
+	fry = fry * scalex + translatey
 
 	s.Line(
 		flx, fly, frx, fry,

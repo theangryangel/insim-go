@@ -122,3 +122,53 @@ func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
 	return minx, miny, maxx, maxy
 
 }
+
+func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (float64, float64, float64, float64) {
+	// TODO this should probably be refactored out of Pth, it would be useful in other plces.
+	// But we should introduce some general geometry types and funcs
+
+	minX, minY, maxX, maxY := p.OuterBounds(true)
+
+	disX := maxX - minX
+	disY := maxY - minY
+
+	/*
+	Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute respectively.
+	*/
+
+	vbx, vby, vbh, vbw := minX-(0.01*disX),
+	minY-(0.01*disY),
+	disY+(0.02*disY),
+	disX+(0.02*disX)
+
+	/*
+	Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+	*/
+	ex, ey, ew, eh := 0.0, 0.0, imageWidth, imageHeight
+
+	/*
+	Initialize scale-x to e-width/vb-width.
+	Initialize scale-y to e-height/vb-height.
+	Set the larger of scale-x and scale-y to the smaller.
+	*/
+
+	scalex := ew / vbw
+	scaley := eh / vbh
+	if scalex > scaley {
+		scalex = scaley
+	} else {
+		scaley = scalex
+	}
+
+	/*
+	Initialize translate-x to e-x - (vb-x * scale-x).
+	Initialize translate-y to e-y - (vb-y * scale-y)
+	If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+	If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+	*/
+
+	translatex := (ex - (vbx * scalex)) + ((ew - vbw * scalex) / 2)
+	translatey := (ey - (vby * scaley)) + ((eh - vbh * scaley) / 2)
+
+	return scalex, scaley, translatex, translatey
+}
