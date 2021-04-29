@@ -17,6 +17,8 @@ func main() {
 	resolution := flag.Int("resolution", 1.0, "Resolution. 1=full quality, 0=auto, 2=1/2, 3=1/3, etc.")
 	trackcolour := flag.String("track", "#1F2937", "Track colour in hex.")
 	limitcolour := flag.String("limit", "#059669", "Limit colour in hex.")
+	linecolour := flag.String("line", "#F9FAFB", "Racing line colour")
+	line := flag.Bool("showline", true, "Show racing line")
 	startfinishcolour := flag.String("startfinish", "#ffffff", "Start/Finish colour in hex.")
 	imageHeight := flag.Float64("height", 1024, "Image width")
 	imageWidth := flag.Float64("width", 1024, "Image Height")
@@ -25,6 +27,9 @@ func main() {
 
 	p := files.Pth{}
 	p.Read(path.Join("data", fmt.Sprintf("%s.pth", *file)))
+
+	var roadCX []float64
+	var roadCY []float64
 
 	var roadLX []float64
 	var roadLY []float64
@@ -51,6 +56,11 @@ func main() {
 		}
 
 		node := &p.Nodes[i]
+
+		rcx, rcy := node.RoadCentre(true)
+
+		roadCX = append(roadCX, rcx)
+		roadCY = append(roadCY, rcy)
 
 		// calc road
 		rlx, rly, rrx, rry := node.RoadLimits(true)
@@ -93,6 +103,11 @@ func main() {
 
 	lastnode := p.Nodes[0]
 
+	rcx, rcy := lastnode.RoadCentre(true)
+
+	roadCX = append(roadCX, rcx)
+	roadCY = append(roadCY, rcy)
+
 	rlx, rly, rrx, rry := lastnode.RoadLimits(true)
 
 	roadLX = append(roadLX, rlx)
@@ -115,6 +130,8 @@ func main() {
 	disX := maxX - minX
 	disY := maxY - minY
 
+	// we use viewbox to scale so we dont have to scale the coordinates by hand
+	// this means our text will be wonky sized. boo.
 	viewBox := fmt.Sprintf(
 		"viewBox=\"%.2f %.2f %.2f %.2f\"",
 		minX-(0.01*disX),
@@ -152,6 +169,14 @@ func main() {
 	}
 
 	s.Text(flagX, flagY, "🏁", " font-size: 25px;", "transform=\"translate(-25, 0)\"")
+
+	if *line {
+		s.Polyline(
+			roadCX,
+			roadCY,
+			fmt.Sprintf("stroke: %s; stroke-width: 2px; fill: none", *linecolour),
+		)
+	}
 
 	s.End()
 }

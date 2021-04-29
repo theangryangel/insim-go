@@ -37,6 +37,15 @@ type PthNode struct {
 	RoadLimit  PthLimit
 }
 
+func (node *PthNode) RoadCentre(metres bool) (float64, float64) {
+	factor := float64(1)
+	if metres {
+		factor = 65536
+	}
+
+	return (float64(node.Centre.X) / factor), (float64(-node.Centre.Y) / factor)
+}
+
 func (node *PthNode) RoadLimits(metres bool) (float64, float64, float64, float64) {
 	factor := float64(1)
 	if metres {
