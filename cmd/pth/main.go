@@ -117,22 +117,22 @@ func main() {
 	flx = flx * scalex + translatex
 	fly = fly * scaley + translatey
 	frx = frx * scalex + translatex
-	fry = fry * scalex + translatey
+	fry = fry * scaley + translatey
 
 	s.Line(
 		flx, fly, frx, fry,
 		fmt.Sprintf("stroke: %s; stroke-width: 2px;", *startfinishcolour),
 	)
 
-	flagX := flx
-	flagY := fly
+	flagX := flx - 50
+	flagY := fly 
 
-	if flx > frx {
-		flagX = frx
-		flagY = fry
-	}
+	s.Text(flagX, flagY, "🏁", " font-size: 15px;", "text-anchor=\"end\"")
 
-	s.Text(flagX, flagY, "🏁", " font-size: 25px;", "transform=\"translate(-25, 0)\"")
+	s.Line(
+		flagX, flagY - (15.0/2.0), frx, fry,
+		fmt.Sprintf("stroke: %s; stroke-width: 1px;", *trackcolour),
+	)
 
 	if *line {
 		s.Polyline(
