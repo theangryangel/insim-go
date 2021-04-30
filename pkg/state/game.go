@@ -218,11 +218,7 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 	s.QualifyingDuration = rst.QualifyingDuration()
 
 	for _, p := range s.Players {
-		p.RaceFinished = false
-		p.BTime = time.Duration(0)
-		p.TTime = time.Duration(0)
-
-		p.Gaps.Reset()
+		p.Reset()
 	}
 }
 

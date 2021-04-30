@@ -3,10 +3,12 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	svg "github.com/ajstarks/svgo/float"
 	"github.com/theangryangel/insim-go/pkg/files"
+	"io"
 	"os"
 )
 
@@ -58,26 +60,26 @@ func main() {
 
 		rcx, rcy := node.RoadCentre(true)
 
-		roadCX = append(roadCX, rcx * scalex * translatex)
-		roadCY = append(roadCY, rcy * scaley * translatey)
+		roadCX = append(roadCX, rcx*scalex*translatex)
+		roadCY = append(roadCY, rcy*scaley*translatey)
 
 		// calc road
 		rlx, rly, rrx, rry := node.RoadLimits(true)
 
-		roadLX = append(roadLX, rlx * scalex + translatex)
-		roadLY = append(roadLY, rly * scaley + translatey)
+		roadLX = append(roadLX, rlx*scalex+translatex)
+		roadLY = append(roadLY, rly*scaley+translatey)
 
-		roadRX = append(roadRX, rrx * scalex + translatex)
-		roadRY = append(roadRY, rry * scaley + translatey)
+		roadRX = append(roadRX, rrx*scalex+translatex)
+		roadRY = append(roadRY, rry*scaley+translatey)
 
 		// calc limit
 		llx, lly, lrx, lry := node.OuterLimits(true)
 
-		outerLX = append(outerLX, llx * scalex + translatex)
-		outerLY = append(outerLY, lly * scaley + translatey)
+		outerLX = append(outerLX, llx*scalex+translatex)
+		outerLY = append(outerLY, lly*scaley+translatey)
 
-		outerRX = append(outerRX, lrx * scalex + translatex)
-		outerRY = append(outerRY, lry * scaley + translatey)
+		outerRX = append(outerRX, lrx*scalex+translatex)
+		outerRY = append(outerRY, lry*scaley+translatey)
 	}
 
 	// copy the first node to close the loop
@@ -97,7 +99,10 @@ func main() {
 	outerRX = append(outerRX, outerRX[0])
 	outerRY = append(outerRY, outerRY[0])
 
-	s := svg.New(os.Stdout)
+	var b bytes.Buffer
+	buf := io.Writer(&b)
+
+	s := svg.New(buf)
 
 	s.Start(*imageWidth, *imageHeight, "style=\"border: 1px solid red\"")
 
@@ -114,10 +119,10 @@ func main() {
 
 	flx, fly, frx, fry := p.Nodes[p.FinishLine].RoadLimits(true)
 
-	flx = flx * scalex + translatex
-	fly = fly * scaley + translatey
-	frx = frx * scalex + translatex
-	fry = fry * scaley + translatey
+	flx = flx*scalex + translatex
+	fly = fly*scaley + translatey
+	frx = frx*scalex + translatex
+	fry = fry*scaley + translatey
 
 	s.Line(
 		flx, fly, frx, fry,
@@ -125,12 +130,12 @@ func main() {
 	)
 
 	flagX := flx - 50
-	flagY := fly 
+	flagY := fly
 
 	s.Text(flagX, flagY, "🏁", " font-size: 15px;", "text-anchor=\"end\"")
 
 	s.Line(
-		flagX, flagY - (15.0/2.0), frx, fry,
+		flagX, flagY-(15.0/2.0), frx, fry,
 		fmt.Sprintf("stroke: %s; stroke-width: 1px;", *trackcolour),
 	)
 
@@ -143,4 +148,6 @@ func main() {
 	}
 
 	s.End()
+
+	fmt.Println(b.String())
 }

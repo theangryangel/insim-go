@@ -3,6 +3,7 @@ package files
 import (
 	"encoding/binary"
 	"github.com/go-restruct/restruct"
+	"github.com/theangryangel/insim.go/pkg/geometry"
 	"io/ioutil"
 	"math"
 )
@@ -11,12 +12,6 @@ var LeftCos = math.Cos(90 * math.Pi / 180)
 var LeftSin = math.Sin(90 * math.Pi / 180)
 var RightCos = math.Cos(-90 * math.Pi / 180)
 var RightSin = math.Sin(-90 * math.Pi / 180)
-
-type PthCentre struct {
-	X int32 `struct:"int32"`
-	Y int32 `struct:"int32"`
-	Z int32 `struct:"int32"`
-}
 
 type PthDirection struct {
 	X float32 `struct:"float32"`
@@ -30,7 +25,7 @@ type PthLimit struct {
 }
 
 type PthNode struct {
-	Centre    PthCentre
+	Centre    geometry.FixedPoint
 	Direction PthDirection
 
 	OuterLimit PthLimit
@@ -133,23 +128,23 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 	disY := maxY - minY
 
 	/*
-	Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute respectively.
+		Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute respectively.
 	*/
 
 	vbx, vby, vbh, vbw := minX-(0.01*disX),
-	minY-(0.01*disY),
-	disY+(0.02*disY),
-	disX+(0.02*disX)
+		minY-(0.01*disY),
+		disY+(0.02*disY),
+		disX+(0.02*disX)
 
 	/*
-	Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+		Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
 	*/
 	ex, ey, ew, eh := 0.0, 0.0, imageWidth, imageHeight
 
 	/*
-	Initialize scale-x to e-width/vb-width.
-	Initialize scale-y to e-height/vb-height.
-	Set the larger of scale-x and scale-y to the smaller.
+		Initialize scale-x to e-width/vb-width.
+		Initialize scale-y to e-height/vb-height.
+		Set the larger of scale-x and scale-y to the smaller.
 	*/
 
 	scalex := ew / vbw
@@ -161,14 +156,14 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 	}
 
 	/*
-	Initialize translate-x to e-x - (vb-x * scale-x).
-	Initialize translate-y to e-y - (vb-y * scale-y)
-	If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
-	If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+		Initialize translate-x to e-x - (vb-x * scale-x).
+		Initialize translate-y to e-y - (vb-y * scale-y)
+		If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+		If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
 	*/
 
-	translatex := (ex - (vbx * scalex)) + ((ew - vbw * scalex) / 2)
-	translatey := (ey - (vby * scaley)) + ((eh - vbh * scaley) / 2)
+	translatex := (ex - (vbx * scalex)) + ((ew - vbw*scalex) / 2)
+	translatey := (ey - (vby * scaley)) + ((eh - vbh*scaley) / 2)
 
 	return scalex, scaley, translatex, translatey
 }
