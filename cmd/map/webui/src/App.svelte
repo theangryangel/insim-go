@@ -28,7 +28,7 @@
 
         es.addEventListener("state", (ev) => {
             let data = JSON.parse(ev.data)
-            $state.set(data)
+            $state = data
           })
 
         es.addEventListener("player-state", (ev) => {
@@ -67,8 +67,7 @@
       <Players />
     </div>
     <div class="w-2/5 flex flex-col bg-white text-gray-900">
-      <div class="h-3/4 p-3">
-        map
+      <div class="h-3/4 overflow-auto">
       </div>
       <div class="h-1/4 overflow-y-auto bg-gray-200 p-3 break-all">
         <Messages />

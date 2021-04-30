@@ -5,3 +5,9 @@ type FixedPoint struct {
 	Y int32 `struct:"int32"`
 	Z int32 `struct:"int32"`
 }
+
+type FloatingPoint struct {
+	X float32 `struct:"float32"`
+	Y float32 `struct:"float32"`
+	Z float32 `struct:"float32"`
+}

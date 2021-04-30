@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/theangryangel/insim-go/pkg/files"
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"github.com/theangryangel/insim-go/pkg/session"
 	"github.com/theangryangel/insim-go/pkg/strings"
@@ -254,6 +255,26 @@ func main() {
 
 	r.Get("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, c.GameState)
+	})
+
+	r.Get("/map/{track}", func(w http.ResponseWriter, r *http.Request) {
+		track := chi.URLParam(r, "track")
+
+		pth := files.Pth{}
+		// TODO this is massively unsafe
+		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Write([]byte(pth.Svg(
+			1024,
+			1024,
+			2,
+			"#1F2937",
+			"#059669",
+			"#F9FAFB",
+			"#ffffff",
+			true,
+		)))
 	})
 
 	http.ListenAndServe(":4000", r)

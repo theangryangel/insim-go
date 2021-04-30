@@ -1,9 +1,13 @@
 package files
 
 import (
+	"bytes"
 	"encoding/binary"
+	"fmt"
+	svg "github.com/ajstarks/svgo/float"
 	"github.com/go-restruct/restruct"
-	"github.com/theangryangel/insim.go/pkg/geometry"
+	"github.com/theangryangel/insim-go/pkg/geometry"
+	"io"
 	"io/ioutil"
 	"math"
 )
@@ -13,12 +17,6 @@ var LeftSin = math.Sin(90 * math.Pi / 180)
 var RightCos = math.Cos(-90 * math.Pi / 180)
 var RightSin = math.Sin(-90 * math.Pi / 180)
 
-type PthDirection struct {
-	X float32 `struct:"float32"`
-	Y float32 `struct:"float32"`
-	Z float32 `struct:"float32"`
-}
-
 type PthLimit struct {
 	Left  float32 `struct:"float32"`
 	Right float32 `struct:"float32"`
@@ -26,7 +24,7 @@ type PthLimit struct {
 
 type PthNode struct {
 	Centre    geometry.FixedPoint
-	Direction PthDirection
+	Direction geometry.FloatingPoint
 
 	OuterLimit PthLimit
 	RoadLimit  PthLimit
@@ -166,4 +164,125 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 	translatey := (ey - (vby * scaley)) + ((eh - vbh*scaley) / 2)
 
 	return scalex, scaley, translatex, translatey
+}
+
+func (p *Pth) Svg(imageWidth float64, imageHeight float64, resolution int, trackcolour string, limitcolour string, linecolour string, startfinishcolour string, showline bool) string {
+	// TODO refactor a bit
+	var roadCX []float64
+	var roadCY []float64
+
+	var roadLX []float64
+	var roadLY []float64
+
+	var roadRX []float64
+	var roadRY []float64
+
+	var outerLX []float64
+	var outerLY []float64
+
+	var outerRX []float64
+	var outerRY []float64
+
+	scalex, scaley, translatex, translatey := p.GenerateScaleTransform(imageWidth, imageHeight)
+
+	for i := 0; i < len(p.Nodes); i++ {
+
+		if resolution > 0 && i%resolution != 0 {
+			continue
+		}
+
+		node := &p.Nodes[i]
+
+		rcx, rcy := node.RoadCentre(true)
+
+		roadCX = append(roadCX, rcx*scalex*translatex)
+		roadCY = append(roadCY, rcy*scaley*translatey)
+
+		// calc road
+		rlx, rly, rrx, rry := node.RoadLimits(true)
+
+		roadLX = append(roadLX, rlx*scalex+translatex)
+		roadLY = append(roadLY, rly*scaley+translatey)
+
+		roadRX = append(roadRX, rrx*scalex+translatex)
+		roadRY = append(roadRY, rry*scaley+translatey)
+
+		// calc limit
+		llx, lly, lrx, lry := node.OuterLimits(true)
+
+		outerLX = append(outerLX, llx*scalex+translatex)
+		outerLY = append(outerLY, lly*scaley+translatey)
+
+		outerRX = append(outerRX, lrx*scalex+translatex)
+		outerRY = append(outerRY, lry*scaley+translatey)
+	}
+
+	// copy the first node to close the loop
+
+	roadCX = append(roadCX, roadCX[0])
+	roadCY = append(roadCY, roadCY[0])
+
+	roadLX = append(roadLX, roadLX[0])
+	roadLY = append(roadLY, roadLY[0])
+
+	roadRX = append(roadRX, roadRX[0])
+	roadRY = append(roadRY, roadRY[0])
+
+	outerLX = append(outerLX, outerLX[0])
+	outerLY = append(outerLY, outerLY[0])
+
+	outerRX = append(outerRX, outerRX[0])
+	outerRY = append(outerRY, outerRY[0])
+
+	var b bytes.Buffer
+	buf := io.Writer(&b)
+
+	s := svg.New(buf)
+
+	s.Start(imageWidth, imageHeight, "style=\"border: 1px solid red\"")
+
+	s.Polygon(
+		append(outerLX, outerRX...),
+		append(outerLY, outerRY...),
+		fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", limitcolour, limitcolour),
+	)
+	s.Polygon(
+		append(roadLX, roadRX...),
+		append(roadLY, roadRY...),
+		fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", trackcolour, trackcolour),
+	)
+
+	flx, fly, frx, fry := p.Nodes[p.FinishLine].RoadLimits(true)
+
+	flx = flx*scalex + translatex
+	fly = fly*scaley + translatey
+	frx = frx*scalex + translatex
+	fry = fry*scaley + translatey
+
+	s.Line(
+		flx, fly, frx, fry,
+		fmt.Sprintf("stroke: %s; stroke-width: 2px;", startfinishcolour),
+	)
+
+	flagX := flx - 50
+	flagY := fly
+
+	s.Text(flagX, flagY, "🏁", " font-size: 15px;", "text-anchor=\"end\"")
+
+	s.Line(
+		flagX, flagY-(15.0/2.0), frx, fry,
+		fmt.Sprintf("stroke: %s; stroke-width: 1px;", trackcolour),
+	)
+
+	if showline {
+		s.Polyline(
+			roadCX,
+			roadCY,
+			fmt.Sprintf("stroke: %s; stroke-width: 2px; fill: none", linecolour),
+		)
+	}
+
+	s.End()
+
+	return b.String()
 }
