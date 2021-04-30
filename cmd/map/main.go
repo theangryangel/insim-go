@@ -10,9 +10,14 @@ import (
 	"github.com/theangryangel/insim-go/pkg/session"
 	"github.com/theangryangel/insim-go/pkg/strings"
 
+	"encoding/json"
+	"time"
+
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	sse "github.com/alexandrevicenzi/go-sse"
+
+	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 )
@@ -34,27 +39,68 @@ func main() {
 	}
 
 	c := session.NewInsimSession()
+	defer c.Close()
 
-	s := newStreamHub()
+	// Create SSE server
+	s := sse.NewServer(&sse.Options{
+		Logger: nil,
+	})
+	defer s.Shutdown()
 
 	c.On(func(client *session.InsimSession, mci *protocol.Mci) {
 		for _, info := range mci.Info {
 			if v, ok := c.GameState.Players[info.Plid]; ok {
-				s.publish("player-state", playerState{Plid: info.Plid, State: v})
+				data, err := json.Marshal(playerState{Plid: info.Plid, State: v})
+				if err != nil {
+					continue
+				}
+
+				s.SendMessage(
+					"/events",
+					sse.NewMessage(
+						"",             // id
+						string(data),   // data
+						"player-state", // event
+					),
+				)
 			}
 		}
 	})
 
 	c.On(func(client *session.InsimSession, pll *protocol.Pll) {
-		s.publish("player-left", pll.Plid)
+		data, err := json.Marshal(pll)
+		if err != nil {
+			return
+		}
+
+		s.SendMessage(
+			"/events",
+			sse.NewMessage(
+				"", // id
+				string(data),
+				"player-left", // event
+			),
+		)
 	})
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
 		if player, ok := c.GameState.Players[mso.Plid]; ok {
-			data := fmt.Sprintf("Chat: %s: %s", strings.StripColours(player.Playername), strings.StripColours(mso.Msg))
+			data := fmt.Sprintf(
+				"%s: %s: %s",
+				time.Now(),
+				strings.StripColours(player.Playername),
+				strings.StripColours(mso.Msg),
+			)
 			fmt.Println(data)
 
-			s.publish("chat", data)
+			s.SendMessage(
+				"/events",
+				sse.NewMessage(
+					"", // id
+					data,
+					"chat", // event
+				),
+			)
 		}
 	})
 
@@ -71,25 +117,73 @@ func main() {
 
 	c.On(func(client *session.InsimSession, rst *protocol.Rst) {
 		if rst.Racing() {
-			data := fmt.Sprintf("Event: Race starting on %s weather=%d,wind=%d,laps=%d", rst.Track, rst.Weather, rst.Wind, rst.RaceLaps)
+			data := fmt.Sprintf(
+				"%s: Race starting on %s weather=%d,wind=%d,laps=%d",
+				time.Now(),
+				rst.Track,
+				rst.Weather,
+				rst.Wind,
+				rst.RaceLaps,
+			)
 			fmt.Println(data)
-			s.publish("chat", data)
+			s.SendMessage(
+				"/events",
+				sse.NewMessage(
+					"",
+					data,
+					"chat",
+				),
+			)
 		}
 
 		if rst.Qualifying() {
-			data := fmt.Sprintf("Event: Qualifying starting on %s weather=%d,wind=%d,duration=%s", rst.Track, rst.Weather, rst.Wind, rst.QualifyingDuration())
+			data := fmt.Sprintf(
+				"%s: Qualifying starting on %s weather=%d,wind=%d,duration=%s",
+				time.Now(),
+				rst.Track,
+				rst.Weather,
+				rst.Wind,
+				rst.QualifyingDuration(),
+			)
 			fmt.Println(data)
-			s.publish("chat", data)
+			s.SendMessage(
+				"/events",
+				sse.NewMessage(
+					"",
+					data,
+					"chat",
+				),
+			)
 		}
 
-		s.publish("state", client.GameState)
+		data, err := json.Marshal(client.GameState)
+		if err != nil {
+			return
+		}
+
+		s.SendMessage(
+			"/events",
+			sse.NewMessage(
+				"",           // id
+				string(data), // event
+				"state",
+			),
+		)
+
 	})
 
 	c.On(func(client *session.InsimSession, res *protocol.Res) {
 		if player, ok := c.GameState.Players[res.Plid]; ok {
-			data := fmt.Sprintf("Result: %s position=%d,btime=%s,ttime=%s", player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
+			data := fmt.Sprintf("%s: %s position=%d,btime=%s,ttime=%s", time.Now(), player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
 			fmt.Println(data)
-			s.publish("chat", data)
+			s.SendMessage(
+				"/events",
+				sse.NewMessage(
+					"", // id
+					data,
+					"chat", // event
+				),
+			)
 		}
 	})
 
@@ -98,8 +192,15 @@ func main() {
 		b, bok := c.GameState.Players[con.B.Plid]
 
 		if aok && bok {
-			data := fmt.Sprintf("BUMP: %s and %s", strings.StripColours(a.Playername), strings.StripColours(b.Playername))
-			s.publish("chat", data)
+			data := fmt.Sprintf("%s: Contact between %s and %s", time.Now(), strings.StripColours(a.Playername), strings.StripColours(b.Playername))
+			s.SendMessage(
+				"/events",
+				sse.NewMessage(
+					"", // id
+					data,
+					"chat", // event
+				),
+			)
 		}
 	})
 
@@ -141,7 +242,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	r.Method("GET", "/*", fs)
 
-	r.Get("/subscribe", s.subscribeHandler)
+	r.Mount("/events", s)
 
 	r.Get("/api/connections", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, c.GameState.Connections)

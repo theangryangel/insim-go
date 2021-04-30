@@ -9,7 +9,7 @@ import (
 )
 
 type GameState struct {
-	mu sync.Mutex
+	mu sync.Mutex `json:"-"`
 
 	// TODO are these more like something an event state?
 	// probably. What does that look like?
