@@ -4,5 +4,28 @@ import { state } from '../stores.js'
 <style>
 </style>
 <div>
-  Track: {$state.Track.Name} ({$state.Track.Code}), Weather: {$state.Weather}, Wind: {$state.Wind}
+{$state.Track.Name} ({$state.Track.Code})
+
+Weather:
+
+{#if $state.Weather <= 1}
+☀️
+{/if}
+
+{#if $state.Weather == 2}
+🌤️
+{/if}
+
+{#if $state.Weather == 3}
+☁️
+{/if}
+
+{#if $state.Wind == 1}
+, Low Wind
+{/if}
+
+{#if $state.Wind == 2}
+, Hard Wind
+{/if}
+
 </div>

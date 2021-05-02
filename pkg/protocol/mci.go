@@ -47,7 +47,12 @@ type Mci struct {
 }
 
 func (p *Mci) UnmarshalInsim(data []byte) (err error) {
-	return restruct.Unpack(data, binary.LittleEndian, p)
+	err = restruct.Unpack(data, binary.LittleEndian, p)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Mci) MarshalInsim() (data []byte, err error) {

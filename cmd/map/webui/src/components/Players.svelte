@@ -14,6 +14,7 @@
     <tr>
       <th></th>
       <th>P</th>
+      <th>#</th>
       <th>Driver<br><small>Car</small></th>
       <th>Lap</th>
       <th class="text-center">Gap</th>
@@ -22,7 +23,7 @@
     </tr>
   </thead>
   <tbody class="">
-    {#each Object.values($state.Players).filter((a) => { return a.RacePosition > 0; }).sort((a, b) => { return a.RacePosition - b.RacePosition; }) as player}
+    {#each Object.entries($state.Players).filter(([_plid, a]) => { return a.RacePosition > 0; }).sort((a, b) => { return a[1].RacePosition - b[1].RacePosition; }) as [plid, player]}
       <tr>
         <td>
           {#if player.RaceFinished}
@@ -30,6 +31,7 @@
           {/if}
         </td>
         <td>{player.RacePosition}</td>
+        <td>{plid}</td>
         <td>
           <Colours string={player.Playername} />
           <br>

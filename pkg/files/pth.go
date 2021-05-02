@@ -1,13 +1,9 @@
 package files
 
 import (
-	"bytes"
 	"encoding/binary"
-	"fmt"
-	svg "github.com/ajstarks/svgo/float"
 	"github.com/go-restruct/restruct"
 	"github.com/theangryangel/insim-go/pkg/geometry"
-	"io"
 	"io/ioutil"
 	"math"
 )
@@ -70,9 +66,9 @@ func (node *PthNode) OuterLimits(metres bool) (float64, float64, float64, float6
 }
 
 type Pth struct {
-	Magic    string `struct:"[6]byte"`
-	Version  uint8  `struct:"uint8"`
-	Revision uint8  `struct:"uint8"`
+	Magic    string `struct:"[6]byte" json:"-"`
+	Version  uint8  `struct:"uint8" json:"-"`
+	Revision uint8  `struct:"uint8" json:"-"`
 
 	NumNodes   int32 `struct:"int32,sizeof=Nodes"`
 	FinishLine int32 `struct:"int32"`
@@ -86,7 +82,12 @@ func (p *Pth) Read(file string) (err error) {
 		return err
 	}
 
-	return restruct.Unpack(data, binary.LittleEndian, p)
+	err = restruct.Unpack(data, binary.LittleEndian, p)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
@@ -166,7 +167,29 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 	return scalex, scaley, translatex, translatey
 }
 
-func (p *Pth) Svg(imageWidth float64, imageHeight float64, resolution int, trackcolour string, limitcolour string, linecolour string, startfinishcolour string, showline bool) string {
+type PthFit struct {
+	// TODO reuse Pth?
+
+	OuterX []float64
+	OuterY []float64
+
+	RoadX []float64
+	RoadY []float64
+
+	RoadCX []float64
+	RoadCY []float64
+
+	FinishX []float64
+	FinishY []float64
+
+	ScaleX float64
+	ScaleY float64
+
+	TranslateX float64
+	TranslateY float64
+}
+
+func (p *Pth) FitTo(imageWidth float64, imageHeight float64, resolution int) PthFit {
 	// TODO refactor a bit
 	var roadCX []float64
 	var roadCY []float64
@@ -195,8 +218,8 @@ func (p *Pth) Svg(imageWidth float64, imageHeight float64, resolution int, track
 
 		rcx, rcy := node.RoadCentre(true)
 
-		roadCX = append(roadCX, rcx*scalex*translatex)
-		roadCY = append(roadCY, rcy*scaley*translatey)
+		roadCX = append(roadCX, rcx*scalex+translatex)
+		roadCY = append(roadCY, rcy*scaley+translatey)
 
 		// calc road
 		rlx, rly, rrx, rry := node.RoadLimits(true)
@@ -234,24 +257,6 @@ func (p *Pth) Svg(imageWidth float64, imageHeight float64, resolution int, track
 	outerRX = append(outerRX, outerRX[0])
 	outerRY = append(outerRY, outerRY[0])
 
-	var b bytes.Buffer
-	buf := io.Writer(&b)
-
-	s := svg.New(buf)
-
-	s.Start(imageWidth, imageHeight, "style=\"border: 1px solid red\"")
-
-	s.Polygon(
-		append(outerLX, outerRX...),
-		append(outerLY, outerRY...),
-		fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", limitcolour, limitcolour),
-	)
-	s.Polygon(
-		append(roadLX, roadRX...),
-		append(roadLY, roadRY...),
-		fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", trackcolour, trackcolour),
-	)
-
 	flx, fly, frx, fry := p.Nodes[p.FinishLine].RoadLimits(true)
 
 	flx = flx*scalex + translatex
@@ -259,30 +264,25 @@ func (p *Pth) Svg(imageWidth float64, imageHeight float64, resolution int, track
 	frx = frx*scalex + translatex
 	fry = fry*scaley + translatey
 
-	s.Line(
-		flx, fly, frx, fry,
-		fmt.Sprintf("stroke: %s; stroke-width: 2px;", startfinishcolour),
-	)
+	res := PthFit{
+		OuterX: append(outerLX, outerRX...),
+		OuterY: append(outerLY, outerRY...),
 
-	flagX := flx - 50
-	flagY := fly
+		RoadX: append(roadLX, roadRX...),
+		RoadY: append(roadLY, roadRY...),
 
-	s.Text(flagX, flagY, "🏁", " font-size: 15px;", "text-anchor=\"end\"")
+		RoadCX: roadCX,
+		RoadCY: roadCY,
 
-	s.Line(
-		flagX, flagY-(15.0/2.0), frx, fry,
-		fmt.Sprintf("stroke: %s; stroke-width: 1px;", trackcolour),
-	)
+		FinishX: []float64{flx, frx},
+		FinishY: []float64{fly, fry},
 
-	if showline {
-		s.Polyline(
-			roadCX,
-			roadCY,
-			fmt.Sprintf("stroke: %s; stroke-width: 2px; fill: none", linecolour),
-		)
+		ScaleX: scalex,
+		ScaleY: scaley,
+
+		TranslateX: translatex,
+		TranslateY: translatey,
 	}
 
-	s.End()
-
-	return b.String()
+	return res
 }

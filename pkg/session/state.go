@@ -76,4 +76,8 @@ func useGameState(c *InsimSession) {
 	c.PreOn(func(c *InsimSession, fin *protocol.Fin) {
 		c.GameState.FromFin(fin)
 	})
+
+	c.PreOn(func(c *InsimSession, ism *protocol.Ism) {
+		c.GameState.FromIsm(ism)
+	})
 }

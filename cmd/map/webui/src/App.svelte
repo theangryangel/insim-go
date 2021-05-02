@@ -4,6 +4,7 @@
     import TrackInfo from './components/TrackInfo.svelte'
     import Messages from './components/Messages.svelte'
     import Players from './components/Players.svelte'
+    import Map from './components/Map.svelte'
     import { state, messages } from './stores.js'
 
     let es = null;
@@ -22,7 +23,9 @@
           }
 
         es.addEventListener("chat", (ev) => {
-          $messages.unshift(ev.data)
+          let data = JSON.parse(ev.data)
+
+          $messages.unshift(data)
           $messages = $messages.slice(0, 10)
         })
 
@@ -67,7 +70,8 @@
       <Players />
     </div>
     <div class="w-2/5 flex flex-col bg-white text-gray-900">
-      <div class="h-3/4 overflow-auto">
+<div class="h-3/4 overflow-auto">
+<Map/>
       </div>
       <div class="h-1/4 overflow-y-auto bg-gray-200 p-3 break-all">
         <Messages />

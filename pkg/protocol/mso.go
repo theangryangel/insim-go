@@ -30,7 +30,6 @@ func (p *Mso) UnmarshalInsim(data []byte) (err error) {
 
 	start := p.TextStart + 6
 	p.Msg, err = strings.Decode(data[start:])
-	//p.Msg = string(data[start:])
 	if err != nil {
 		return err
 	}

@@ -1,3 +1,5 @@
+const production = process.env["NODE_ENV"] == "production";
+
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
   mount: {
@@ -14,8 +16,9 @@ module.exports = {
     // {"match": "routes", "src": ".*", "dest": "/index.html"},
   ],
   optimize: {
-    /* Example: Bundle your final build: */
-    // "bundle": true,
+    bundle: production,
+    minify: production,
+    target: "es2018",
   },
   packageOptions: {
     /* ... */

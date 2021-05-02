@@ -28,6 +28,14 @@ type playerState struct {
 	State interface{}
 }
 
+type chat struct {
+	SentAt time.Time
+	Msg    string
+
+	Plid uint8
+	Ucid uint8
+}
+
 func main() {
 	host := flag.String("host", "127.0.0.1:29999", "host:port to dial or hostname if using -relay")
 	relay := flag.Bool("relay", false, "Use LFSW relay")
@@ -86,19 +94,27 @@ func main() {
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
 		if player, ok := c.GameState.Players[mso.Plid]; ok {
-			data := fmt.Sprintf(
-				"%s: %s: %s",
-				time.Now(),
-				strings.StripColours(player.Playername),
-				strings.StripColours(mso.Msg),
+			data, err := json.Marshal(
+				chat{
+					SentAt: time.Now(),
+					Msg: fmt.Sprintf(
+						"%s: %s",
+						strings.StripColours(player.Playername),
+						strings.StripColours(mso.Msg),
+					),
+					Plid: mso.Plid,
+					Ucid: mso.Ucid,
+				},
 			)
-			fmt.Println(data)
+			if err != nil {
+				panic(err)
+			}
 
 			s.SendMessage(
 				"/events",
 				sse.NewMessage(
 					"", // id
-					data,
+					string(data),
 					"chat", // event
 				),
 			)
@@ -117,47 +133,51 @@ func main() {
 	})
 
 	c.On(func(client *session.InsimSession, rst *protocol.Rst) {
+		var data string
 		if rst.Racing() {
-			data := fmt.Sprintf(
-				"%s: Race starting on %s weather=%d,wind=%d,laps=%d",
-				time.Now(),
+			data = fmt.Sprintf(
+				"Race starting on %s weather=%d,wind=%d,laps=%d",
 				rst.Track,
 				rst.Weather,
 				rst.Wind,
 				rst.RaceLaps,
 			)
 			fmt.Println(data)
-			s.SendMessage(
-				"/events",
-				sse.NewMessage(
-					"",
-					data,
-					"chat",
-				),
-			)
 		}
 
 		if rst.Qualifying() {
-			data := fmt.Sprintf(
-				"%s: Qualifying starting on %s weather=%d,wind=%d,duration=%s",
-				time.Now(),
+			data = fmt.Sprintf(
+				"Qualifying starting on %s weather=%d,wind=%d,duration=%s",
 				rst.Track,
 				rst.Weather,
 				rst.Wind,
 				rst.QualifyingDuration(),
 			)
 			fmt.Println(data)
-			s.SendMessage(
-				"/events",
-				sse.NewMessage(
-					"",
-					data,
-					"chat",
-				),
-			)
 		}
 
-		data, err := json.Marshal(client.GameState)
+		chatmsg, err := json.Marshal(
+			chat{
+				SentAt: time.Now(),
+				Msg:    data,
+				Plid:   0,
+				Ucid:   0,
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		s.SendMessage(
+			"/events",
+			sse.NewMessage(
+				"",              // id
+				string(chatmsg), // event
+				"chat",
+			),
+		)
+
+		gamedata, err := json.Marshal(client.GameState)
 		if err != nil {
 			return
 		}
@@ -165,8 +185,8 @@ func main() {
 		s.SendMessage(
 			"/events",
 			sse.NewMessage(
-				"",           // id
-				string(data), // event
+				"",               // id
+				string(gamedata), // event
 				"state",
 			),
 		)
@@ -175,13 +195,21 @@ func main() {
 
 	c.On(func(client *session.InsimSession, res *protocol.Res) {
 		if player, ok := c.GameState.Players[res.Plid]; ok {
-			data := fmt.Sprintf("%s: %s position=%d,btime=%s,ttime=%s", time.Now(), player.Playername, res.ResultNum, res.BestTime(), res.TotalTime())
+			data, err := json.Marshal(
+				chat{
+					SentAt: time.Now(),
+					Msg:    fmt.Sprintf("%s position=%d,btime=%s,ttime=%s", player.Playername, res.ResultNum, res.BestTime(), res.TotalTime()),
+				},
+			)
+			if err != nil {
+				panic(err)
+			}
 			fmt.Println(data)
 			s.SendMessage(
 				"/events",
 				sse.NewMessage(
 					"", // id
-					data,
+					string(data),
 					"chat", // event
 				),
 			)
@@ -193,12 +221,20 @@ func main() {
 		b, bok := c.GameState.Players[con.B.Plid]
 
 		if aok && bok {
-			data := fmt.Sprintf("%s: Contact between %s and %s", time.Now(), strings.StripColours(a.Playername), strings.StripColours(b.Playername))
+			data, err := json.Marshal(
+				chat{
+					SentAt: time.Now(),
+					Msg:    fmt.Sprintf("Contact between %s and %s", strings.StripColours(a.Playername), strings.StripColours(b.Playername)),
+				},
+			)
+			if err != nil {
+				return
+			}
 			s.SendMessage(
 				"/events",
 				sse.NewMessage(
 					"", // id
-					data,
+					string(data),
 					"chat", // event
 				),
 			)
@@ -257,24 +293,14 @@ func main() {
 		render.JSON(w, r, c.GameState)
 	})
 
-	r.Get("/map/{track}", func(w http.ResponseWriter, r *http.Request) {
-		track := chi.URLParam(r, "track")
+	r.Get("/api/track/{code}", func(w http.ResponseWriter, r *http.Request) {
+		track := chi.URLParam(r, "code")
 
 		pth := files.Pth{}
 		// TODO this is massively unsafe
 		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
 
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.Write([]byte(pth.Svg(
-			1024,
-			1024,
-			2,
-			"#1F2937",
-			"#059669",
-			"#F9FAFB",
-			"#ffffff",
-			true,
-		)))
+		render.JSON(w, r, pth.FitTo(1024, 1024, 2))
 	})
 
 	http.ListenAndServe(":4000", r)

@@ -23,6 +23,9 @@ type GameState struct {
 	Voting             bool
 	QualifyingDuration time.Duration
 
+	MultiPlayer bool
+	HostName    string
+
 	// TODO could do with a ConnectionList and PlayerList type to move some of these functions info
 	// Would allow less locking of the whole GameState
 	Connections map[uint8]*Connection
@@ -375,4 +378,11 @@ func (s *GameState) UpdateGaps(plid uint8, spx uint8) {
 
 	player.Gaps.Next = ""
 	player.Gaps.Prev = ""
+}
+
+func (s *GameState) FromIsm(ism *protocol.Ism) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.MultiPlayer = true
+	s.HostName = ism.HName
 }
