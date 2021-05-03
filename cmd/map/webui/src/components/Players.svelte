@@ -6,6 +6,7 @@
 
   let headers = [
     { key: 'RacePosition', value: 'P' },
+    { key: 'id', value: '#' },
     { key: 'Playername', value: 'Player' },
     { key: 'RaceLap', value: 'Lap' },
     { key: 'Gaps.Next', value: 'Gap' },

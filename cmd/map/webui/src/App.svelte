@@ -95,9 +95,11 @@
 <Content>
   <Grid>
     <Row>
+      {#if showMap}
       <Column sm={16} md={6} lg={6}>
         <Map/>
       </Column>
+      {/if}
       <Column sm={16} md={10} lg={10}>
         <Players/>
       </Column>
