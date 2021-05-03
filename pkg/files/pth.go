@@ -130,10 +130,10 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 		Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute respectively.
 	*/
 
-	vbx, vby, vbh, vbw := minX-(0.01*disX),
-		minY-(0.01*disY),
-		disY+(0.02*disY),
-		disX+(0.02*disX)
+	vbx, vby, vbh, vbw := minX,
+		minY,
+		disY,
+		disX
 
 	/*
 		Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
@@ -169,6 +169,7 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 
 type PthFit struct {
 	// TODO reuse Pth?
+	Bounds [4]float64
 
 	OuterX []float64
 	OuterY []float64
@@ -264,7 +265,17 @@ func (p *Pth) FitTo(imageWidth float64, imageHeight float64, resolution int) Pth
 	frx = frx*scalex + translatex
 	fry = fry*scaley + translatey
 
+	bx1, by1, bx2, by2 := p.OuterBounds(true)
+
 	res := PthFit{
+
+		Bounds: [4]float64{
+			bx1*scalex + translatex,
+			by1*scaley + translatey,
+			bx2*scalex + translatex,
+			by2*scaley + translatey,
+		},
+
 		OuterX: append(outerLX, outerRX...),
 		OuterY: append(outerLY, outerRY...),
 

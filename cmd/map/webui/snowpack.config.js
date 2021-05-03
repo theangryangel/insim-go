@@ -8,8 +8,9 @@ module.exports = {
   plugins: [
     "@snowpack/plugin-svelte",
     "@snowpack/plugin-postcss",
+    //"@snowpack/plugin-sass",
     // temporary workaround for https://github.com/snowpackjs/snowpack/issues/2916
-    "@jadex/snowpack-plugin-tailwindcss-jit",
+    //"@jadex/snowpack-plugin-tailwindcss-jit",
   ],
   routes: [
     /* Enable an SPA Fallback in development: */

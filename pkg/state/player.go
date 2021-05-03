@@ -36,7 +36,7 @@ func (g *Gaps) Update(spx uint8, lap uint16, etime time.Duration) {
 func (g *Gaps) Reset() {
 	for i := 0; i < facts.MaxSplitCount+1; i++ {
 		g.Duration[i] = time.Duration(0)
-		g.Lap[i] = 0
+		g.Lap[i] = 1
 	}
 
 	g.Next = ""

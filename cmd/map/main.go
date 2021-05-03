@@ -11,7 +11,9 @@ import (
 	"github.com/theangryangel/insim-go/pkg/session"
 	"github.com/theangryangel/insim-go/pkg/strings"
 
+	"bytes"
 	"encoding/json"
+	"io"
 	"time"
 
 	"net/http"
@@ -21,6 +23,8 @@ import (
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+
+	svg "github.com/ajstarks/svgo/float"
 )
 
 type playerState struct {
@@ -124,7 +128,7 @@ func main() {
 	c.On(func(client *session.InsimSession, hos *protocol.IrpHos) {
 		fmt.Printf("Hosts:\n")
 		for _, info := range hos.HInfo {
-			fmt.Printf("%s\n", info.HName)
+			fmt.Printf("%s conns=%d\n", info.HName, info.NumConns)
 		}
 	})
 
@@ -293,6 +297,52 @@ func main() {
 		render.JSON(w, r, c.GameState)
 	})
 
+	r.Get("/track/{code}", func(w http.ResponseWriter, r *http.Request) {
+		track := chi.URLParam(r, "code")
+
+		pth := files.Pth{}
+		// TODO this is massively unsafe
+		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
+
+		fit := pth.FitTo(1024, 1024, 2)
+
+		var b bytes.Buffer
+		buf := io.Writer(&b)
+
+		// trackcolour string, limitcolour string, linecolour string, startfinishcolour string
+
+		const trackcolour = "#1F2937"
+		const limitcolour = "#059669"
+		const linecolour = "#F9FAFB"
+		const startfinishcolour = "#ffffff"
+
+		s := svg.New(buf)
+		s.Start(1024, 1024, "style=\"border: 1px solid red\"")
+		s.Polygon(
+			fit.OuterX, fit.OuterY,
+			fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", limitcolour, limitcolour),
+		)
+		s.Polygon(
+			fit.RoadX, fit.RoadY,
+			fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", trackcolour, trackcolour),
+		)
+		s.Line(
+			fit.FinishX[0], fit.FinishY[0], fit.FinishX[1], fit.FinishY[1],
+			fmt.Sprintf("stroke: %s; stroke-width: 2px;", startfinishcolour),
+		)
+
+		s.Polyline(
+			fit.RoadCX, fit.RoadCY,
+			fmt.Sprintf("stroke: %s; stroke-width: 2px; fill: none", linecolour),
+		)
+		s.End()
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Write(
+			[]byte(b.String()),
+		)
+	})
+
 	r.Get("/api/track/{code}", func(w http.ResponseWriter, r *http.Request) {
 		track := chi.URLParam(r, "code")
 
@@ -300,7 +350,17 @@ func main() {
 		// TODO this is massively unsafe
 		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
 
-		render.JSON(w, r, pth.FitTo(1024, 1024, 2))
+		fit := pth.FitTo(1024, 1024, 2)
+
+		var payload struct {
+			Fit   files.PthFit
+			Image string
+		}
+
+		payload.Fit = fit
+		payload.Image = fmt.Sprintf("/track/%s", track)
+
+		render.JSON(w, r, payload)
 	})
 
 	http.ListenAndServe(":4000", r)

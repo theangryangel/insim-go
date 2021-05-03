@@ -1,6 +1,9 @@
 package facts
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Track struct {
 	Name    string
@@ -37,6 +40,8 @@ var Tracks = []Track{
 
 	// Missing all the S2 tracks
 
+	{Name: "Westhill 1", Code: "WE1", License: "S2"},
+
 	{Name: "Rockingham ISSC", Code: "RO1", License: "S3"},
 	{Name: "Rockingham National", Code: "RO2", License: "S3"},
 	{Name: "Rockingham Oval", Code: "RO3", License: "S3"},
@@ -56,6 +61,8 @@ func TrackFromCode(code string) (*Track, error) {
 			return &t, nil
 		}
 	}
+
+	fmt.Println("Unknown track %s", code)
 
 	return nil, ErrUnknownTrack
 }

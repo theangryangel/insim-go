@@ -19,6 +19,9 @@ state.subscribe((value) => {
          .then((res) => {
             return res.json()
          })
+         .then((res) => {
+            return res.Fit;
+         })
          .then((data) => {
             track = []
             for (var i = 0; i < data.RoadX.length && i < data.RoadY.length; i++) {
@@ -49,13 +52,19 @@ state.subscribe((value) => {
    transition: all 700ms ease-in-out;
 }
 </style>
+
+<div style="width: 100%; overflow: auto;">
+
 <svg xmlns="http://www.w3.org/2000/svg" width=1024 height=1024>
+
+<g>
+
 {#if outer.length > 0}
       <polygon points={outer.join(" ")} style="stroke: #059669; stroke-width:2px; fill: #059669; fill-rule: evenodd"/>
    {/if}
 
 {#if track.length > 0}
-      <polygon points={track.join(" ")} style="stroke: #1F2937; stroke-width:2px; fill: #1F2937; fill-rule: evenodd"/>
+      <polygon points={track.join(" ")} style="stroke: #161616; stroke-width:2px; fill: #161616; fill-rule: evenodd"/>
    {/if}
 
    {#if startfinish.length > 0}
@@ -74,4 +83,7 @@ state.subscribe((value) => {
          </text>
       </g>
    {/each}
+
+   </g>
 </svg>
+</div>

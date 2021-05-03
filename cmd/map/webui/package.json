@@ -7,13 +7,18 @@
   "devDependencies": {
     "@jadex/snowpack-plugin-tailwindcss-jit": "0.2.0",
     "@snowpack/plugin-postcss": "1.2.2",
+    "@snowpack/plugin-sass": "^1.4.0",
     "@snowpack/plugin-svelte": "3.6.1",
+    "carbon-components-svelte": "^0.33.0",
+    "carbon-icons-svelte": "^10.28.0",
     "postcss": "8.2.13",
     "postcss-cli": "8.3.1",
+    "postcss-import": "^14.0.1",
     "snowpack": "3.3.7",
     "tailwindcss": "2.1.2"
   },
   "dependencies": {
+    "leaflet": "^1.7.1",
     "svelte": "3.38.1",
     "timeago.js": "^4.0.2"
   }

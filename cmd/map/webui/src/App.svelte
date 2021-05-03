@@ -1,84 +1,114 @@
 <script>
+  import {
+    Header,
+    HeaderUtilities,
+    HeaderNav,
+    HeaderNavItem,
+    HeaderNavMenu,
+    HeaderGlobalAction,
+    SkipToContent,
+    Content,
+    Grid,
+    Row,
+    Column,
+  } from "carbon-components-svelte";
+  import ChoroplethMap20 from "carbon-icons-svelte/lib/ChoroplethMap20";
+  import Chat20 from "carbon-icons-svelte/lib/Chat20";
+
   import { onMount } from 'svelte'
 
-    import TrackInfo from './components/TrackInfo.svelte'
-    import Messages from './components/Messages.svelte'
-    import Players from './components/Players.svelte'
-    import Map from './components/Map.svelte'
-    import { state, messages } from './stores.js'
+  import Messages from './components/Messages.svelte';
+  import TrackInfo from './components/TrackInfo.svelte'
+  import Players from './components/Players.svelte'
+  import Map from './components/Map.svelte'
+  import Leaflet from './components/Leaflet.svelte'
+  import { state, messages } from './stores.js'
 
-    let es = null;
+  let showMap = true;
+  let showChat = true;
 
-    const dial = () => {
-        es = new EventSource(`/events`);
-        es.onerror = () => {
-            console.log(
-                `EventSource error`,
-              );
-            console.log("Reconnecting in 1s", true);
-            setTimeout(dial, 1000);
-          }
-        es.onopen = () => {
-            console.info("eventsource connected");
-          }
+  let es = null;
 
-        es.addEventListener("chat", (ev) => {
-          let data = JSON.parse(ev.data)
+  const dial = () => {
+    es = new EventSource(`/events`);
+    es.onerror = () => {
+      console.log(
+        `EventSource error`,
+      );
+      console.log("Reconnecting in 1s", true);
+      setTimeout(dial, 1000);
+    }
+    es.onopen = () => {
+      console.info("eventsource connected");
+    }
 
-          $messages.unshift(data)
-          $messages = $messages.slice(0, 10)
-        })
+    es.addEventListener("chat", (ev) => {
+      let data = JSON.parse(ev.data)
 
-        es.addEventListener("state", (ev) => {
-            let data = JSON.parse(ev.data)
-            $state = data
-          })
+      $messages.unshift(data)
+      $messages = $messages.slice(0, 10)
+    })
 
-        es.addEventListener("player-state", (ev) => {
-            let data = JSON.parse(ev.data)
-            $state.Players[data.Plid] = data.State
-          })
+    es.addEventListener("state", (ev) => {
+      let data = JSON.parse(ev.data)
+      $state = data
+    })
 
-        es.addEventListener("player-left", (ev) => {
-            let data = JSON.parse(ev.data)
-            delete $state.Players[data.Plid]
-          })
-      }
+    es.addEventListener("player-state", (ev) => {
+      let data = JSON.parse(ev.data)
+      $state.Players[data.Plid] = data.State
+    })
 
-    const initialState = async () => {
-        return fetch("/api/state")
-          .then((res) => {
-              return res.json();
-            })
-          .then((res) => {
-              $state = res;
-            });
-      }
-
-    onMount(async () => {
-        initialState().then(() => { dial(); console.log($state) })
-      });
-</script>
-<style>
-  th, td {
-    @apply p-2;
+    es.addEventListener("player-left", (ev) => {
+      let data = JSON.parse(ev.data)
+      delete $state.Players[data.Plid]
+    })
   }
-</style>
-<div class="flex flex-col w-full h-screen">
-  <div class="flex flex-grow bg-blue-200 flex-row overflow-y-auto">
-    <div class="w-3/5 bg-gray-800 p-3 overflow-y-auto">
-      <Players />
-    </div>
-    <div class="w-2/5 flex flex-col bg-white text-gray-900">
-<div class="h-3/4 overflow-auto">
-<Map/>
-      </div>
-      <div class="h-1/4 overflow-y-auto bg-gray-200 p-3 break-all">
-        <Messages />
-      </div>
-    </div>
+
+  const initialState = async () => {
+    return fetch("/api/state")
+      .then((res) => {
+        return res.json();
+      })
+      .then((res) => {
+        $state = res;
+      });
+  }
+
+  onMount(async () => {
+    initialState().then(() => { dial(); console.log($state) })
+  });
+
+</script>
+
+<Header company="insim.go" platformName="LiveMap">
+  <div slot="skip-to-content">
+    <SkipToContent />
   </div>
-  <footer class="Map-footer flex border-red-900 border-t p-3">
-    <TrackInfo />
-  </footer>
-</div>
+
+  <HeaderUtilities>
+  <HeaderGlobalAction aria-label="Map" icon={ChoroplethMap20} isActive={showMap} on:click={() => { showMap = !showMap }}/>
+  <HeaderGlobalAction aria-label="Map" icon={Chat20} isActive={showChat} on:click={() => { showChat = !showChat }}/>
+  </HeaderUtilities>
+</Header>
+
+<Content>
+  <Grid>
+    <Row>
+      <Column sm={16} md={6} lg={6}>
+        <Map/>
+      </Column>
+      <Column sm={16} md={10} lg={10}>
+        <Players/>
+      </Column>
+    </Row>
+
+    {#if showChat}
+    <Row>
+      <Column>
+        <Messages />
+      </Column>
+    </Row>
+    {/if}
+  </Grid>
+</Content>

@@ -189,7 +189,7 @@ func (s *GameState) FromSta(sta *protocol.Sta) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	track, err := facts.TrackFromCode(sta.Track)
+	track, err := facts.TrackFromCode(sta.Track[0:3])
 	if err != nil {
 		panic(err)
 	}
@@ -207,7 +207,7 @@ func (s *GameState) FromRst(rst *protocol.Rst) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	track, err := facts.TrackFromCode(rst.Track)
+	track, err := facts.TrackFromCode(rst.Track[0:3])
 	if err != nil {
 		panic(err)
 	}

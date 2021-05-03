@@ -2,59 +2,58 @@
   import { state } from '../stores.js'
   import Duration from './Duration.svelte'
   import Colours from './Colours.svelte'
-  import Speed from './Speed.svelte'
+  import { DataTable, Tag } from "carbon-components-svelte";
+
+  let headers = [
+    { key: 'RacePosition', value: 'P' },
+    { key: 'Playername', value: 'Player' },
+    { key: 'RaceLap', value: 'Lap' },
+    { key: 'Gaps.Next', value: 'Gap' },
+    { key: 'S1', value: 'Split 1' },
+    { key: 'S2', value: 'Split 1' },
+    { key: 'S3', value: 'Split 1' },
+    { key: 'BTime', value: 'Best Time' },
+    { key: 'LTime', value: 'Last Time' },
+    { key: 'TTime', value: 'Total Time' },
+
+  ];
+
+  const getRows = (players) => {
+    let output = [];
+    const sorted = Object.entries(players).filter((a) => { return a[1].RacePosition > 0; }).sort((a, b) => { return a[1].RacePosition - b[1].RacePosition; })
+
+    for (const [key, value] of sorted) {
+      output.push({ id: key, ...value});
+    }
+    return output;
+  }
+
+  $: rows = getRows($state.Players);
+
 </script>
 <style>
-  th, td {
-    @apply p-2;
-  }
 </style>
-<table class="w-full text-left border-collapse">
-  <thead>
-    <tr>
-      <th></th>
-      <th>P</th>
-      <th>#</th>
-      <th>Driver<br><small>Car</small></th>
-      <th>Lap</th>
-      <th class="text-center">Gap</th>
-      <th class="text-right">Best</th>
-      <th class="text-right">Total</th>
-    </tr>
-  </thead>
-  <tbody class="">
-    {#each Object.entries($state.Players).filter(([_plid, a]) => { return a.RacePosition > 0; }).sort((a, b) => { return a[1].RacePosition - b[1].RacePosition; }) as [plid, player]}
-      <tr>
-        <td>
-          {#if player.RaceFinished}
-            🏁
-          {/if}
-        </td>
-        <td>{player.RacePosition}</td>
-        <td>{plid}</td>
-        <td>
-          <Colours string={player.Playername} />
-          <br>
-          <small>{player.Vehicle}</small>
-        </td>
-        <td>
-          {player.RaceLap} / {$state.Laps}
-          <br/>
-          <small><Speed speed={player.Position.Speed}/></small>
-          <br/>
-          <small>{player.NumStops} Stops</small>
-          {#if player.PitLane}
-            <br/><small>In Pit Lane</small>
-          {/if}
-        </td>
-        <td class="text-center">
-          {#if player.Gaps.Next}
-            {player.Gaps.Next}
-          {/if}
-        </td>
-        <td class="text-right"><Duration duration={player.BTime}/></td>
-        <td class="text-right"><Duration duration={player.TTime}/></td>
-      </tr>
-    {/each}
-  </tbody>
-</table>
+
+<DataTable
+  size="short"
+  expandable
+  headers={headers}
+rows={rows}>
+
+  <div slot="expanded-row" let:row>
+    <pre>
+      {JSON.stringify(row.Position, null, 2)}
+    </pre>
+  </div>
+
+  <span slot="cell" let:row let:cell>
+    {#if ['BTime', 'TTime', 'LTime'].includes(cell.key)}
+      <Duration duration={cell.value}/>
+    {:else if cell.key == 'Playername'}
+      <Colours string={cell.value}/> {#if row.RaceFinished}🏁{/if} {#if row.PitLane}<Tag>Pitlane</Tag>{/if}
+    {:else if cell.key == 'RaceLap'}
+      {cell.value} / {$state.Laps}
+    {:else}{cell.value}{/if}
+  </span>
+
+</DataTable>

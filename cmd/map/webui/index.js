@@ -1,3 +1,5 @@
+import "carbon-components-svelte/css/all.css";
+
 import App from "./src/App.svelte";
 
 let app = new App({
