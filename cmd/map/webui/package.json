@@ -20,6 +20,6 @@
   "dependencies": {
     "leaflet": "^1.7.1",
     "svelte": "3.38.1",
-    "timeago.js": "^4.0.2"
+    "timeago.js": "4.0.2"
   }
 }
