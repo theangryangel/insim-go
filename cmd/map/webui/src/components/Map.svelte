@@ -1,6 +1,6 @@
 <script>
 import ZoomSvg from '@svelte-parts/zoom/svg'
-import { state } from '../stores.js'
+import { event, players } from '../stores.js'
 
 let code
 let outer = []
@@ -12,11 +12,11 @@ let scaley = 1
 let transformx = 1
 let transformy = 1
 
-state.subscribe((value) => {
+event.subscribe((value) => {
 
-   if (value.Event.Track.Code != code) {
-      code = value.Event.Track.Code
-      fetch(`/api/track/${value.Event.Track.Code}`)
+   if (value.Track.Code != code) {
+      code = value.Track.Code
+      fetch(`/api/track/${code}`)
          .then((res) => {
             return res.json()
          })
@@ -78,7 +78,7 @@ state.subscribe((value) => {
       <text x={startfinish[0]-15} y={startfinish[1]} style=" font-size: 15px;" text-anchor="end">🏁</text>
    {/if}
 
-{#each Object.entries($state.Players).filter(([plid, player]) => { return player.RacePosition > 0 }) as [plid, player]}
+{#each Object.entries($players).filter(([plid, player]) => { return player.RacePosition > 0 }) as [plid, player]}
       <g class="player" transform={`translate(${(player.Position.X / 65536) * scalex + transformx}, ${(-player.Position.Y / 65536) * scaley + transformy})`}>
          <circle r="6" style="stroke: #EF4444; stroke-width: 1px;"
             width=5 height=5 fill="#111827">

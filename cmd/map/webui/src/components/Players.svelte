@@ -1,5 +1,5 @@
 <script>
-  import { state } from '../stores.js'
+  import { players } from '../stores.js'
   import Duration from './Duration.svelte'
   import Colours from './Colours.svelte'
   import { DataTable, Tag } from "carbon-components-svelte";
@@ -29,7 +29,7 @@
     return output;
   }
 
-  $: rows = getRows($state.Players);
+  $: rows = getRows($players);
 
 </script>
 <style>
@@ -51,9 +51,7 @@ rows={rows}>
     {#if ['BTime', 'TTime', 'LTime'].includes(cell.key)}
       <Duration duration={cell.value}/>
     {:else if cell.key == 'Playername'}
-      <Colours string={cell.value}/> {#if row.RaceFinished}🏁{/if} {#if row.PitLane}<Tag>Pitlane</Tag>{/if}
-    {:else if cell.key == 'RaceLap'}
-      {cell.value} / {$state.Laps}
+      <Colours string={cell.value}/> {#if row.RaceFinished}🏁{/if} {#if row.PitLane}<Tag type="teal" size="sm">Pitlane</Tag>{/if}
     {:else}{cell.value}{/if}
   </span>
 

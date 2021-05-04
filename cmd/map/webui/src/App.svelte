@@ -2,9 +2,6 @@
   import {
     Header,
     HeaderUtilities,
-    HeaderNav,
-    HeaderNavItem,
-    HeaderNavMenu,
     HeaderGlobalAction,
     SkipToContent,
     Content,
@@ -18,67 +15,18 @@
   import { onMount } from 'svelte'
 
   import Messages from './components/Messages.svelte';
-  import TrackInfo from './components/TrackInfo.svelte'
   import Players from './components/Players.svelte'
   import Map from './components/Map.svelte'
-  import Leaflet from './components/Leaflet.svelte'
-  import { state, messages } from './stores.js'
+  import { SSE } from './sse.js'
 
   let showMap = true;
   let showChat = true;
 
-  let es = null;
-
-  const dial = () => {
-    es = new EventSource(`/events`);
-    es.onerror = () => {
-      console.log(
-        `EventSource error`,
-      );
-      console.log("Reconnecting in 1s", true);
-      setTimeout(dial, 1000);
-    }
-    es.onopen = () => {
-      console.info("eventsource connected");
-    }
-
-    es.addEventListener("chat", (ev) => {
-      let data = JSON.parse(ev.data)
-
-      $messages.unshift(data)
-      $messages = $messages.slice(0, 10)
-    })
-
-    es.addEventListener("state", (ev) => {
-      let data = JSON.parse(ev.data)
-      $state = data
-    })
-
-    es.addEventListener("player-state", (ev) => {
-      let data = JSON.parse(ev.data)
-      $state.Players[data.Plid] = data.State
-    })
-
-    es.addEventListener("player-left", (ev) => {
-      let data = JSON.parse(ev.data)
-      delete $state.Players[data.Plid]
-    })
-  }
-
-  const initialState = async () => {
-    return fetch("/api/state")
-      .then((res) => {
-        return res.json();
-      })
-      .then((res) => {
-        $state = res;
-      });
-  }
+  let es = new SSE();
 
   onMount(async () => {
-    initialState().then(() => { dial(); console.log($state) })
+    es.dial()
   });
-
 </script>
 
 <Header company="insim.go" platformName="LiveMap">
@@ -93,7 +41,7 @@
 </Header>
 
 <Content>
-  <Grid>
+  <Grid noGutter={true}>
     <Row>
       {#if showMap}
       <Column sm={16} md={6} lg={6}>
