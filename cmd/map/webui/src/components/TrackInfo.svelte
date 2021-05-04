@@ -4,7 +4,7 @@ import { state } from '../stores.js'
 <style>
 </style>
 <div>
-{$state.Track.Name} ({$state.Track.Code})
+{$state.Event.Track.Name} ({$state.Event.Track.Code})
 
 Weather:
 

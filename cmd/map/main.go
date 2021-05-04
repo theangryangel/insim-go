@@ -62,7 +62,7 @@ func main() {
 
 	c.On(func(client *session.InsimSession, mci *protocol.Mci) {
 		for _, info := range mci.Info {
-			if v, ok := c.GameState.Players[info.Plid]; ok {
+			if v, ok := c.GameState.Players.Get(info.Plid); ok {
 				data, err := json.Marshal(playerState{Plid: info.Plid, State: v})
 				if err != nil {
 					continue
@@ -97,7 +97,7 @@ func main() {
 	})
 
 	c.On(func(client *session.InsimSession, mso *protocol.Mso) {
-		if player, ok := c.GameState.Players[mso.Plid]; ok {
+		if player, ok := c.GameState.Players.Get(mso.Plid); ok {
 			data, err := json.Marshal(
 				chat{
 					SentAt: time.Now(),
@@ -181,7 +181,7 @@ func main() {
 			),
 		)
 
-		gamedata, err := json.Marshal(client.GameState)
+		gamedata, err := client.GameState.MarshalJSON()
 		if err != nil {
 			return
 		}
@@ -198,7 +198,7 @@ func main() {
 	})
 
 	c.On(func(client *session.InsimSession, res *protocol.Res) {
-		if player, ok := c.GameState.Players[res.Plid]; ok {
+		if player, ok := c.GameState.Players.Get(res.Plid); ok {
 			data, err := json.Marshal(
 				chat{
 					SentAt: time.Now(),
@@ -221,8 +221,8 @@ func main() {
 	})
 
 	c.On(func(client *session.InsimSession, con *protocol.Con) {
-		a, aok := c.GameState.Players[con.A.Plid]
-		b, bok := c.GameState.Players[con.B.Plid]
+		a, aok := c.GameState.Players.Get(con.A.Plid)
+		b, bok := c.GameState.Players.Get(con.B.Plid)
 
 		if aok && bok {
 			data, err := json.Marshal(
@@ -286,15 +286,15 @@ func main() {
 	r.Mount("/events", s)
 
 	r.Get("/api/connections", func(w http.ResponseWriter, r *http.Request) {
-		render.JSON(w, r, c.GameState.Connections)
+		render.JSON(w, r, &c.GameState.Connections)
 	})
 
 	r.Get("/api/players", func(w http.ResponseWriter, r *http.Request) {
-		render.JSON(w, r, c.GameState.Players)
+		render.JSON(w, r, &c.GameState.Players)
 	})
 
 	r.Get("/api/state", func(w http.ResponseWriter, r *http.Request) {
-		render.JSON(w, r, c.GameState)
+		render.JSON(w, r, &c.GameState)
 	})
 
 	r.Get("/track/{code}", func(w http.ResponseWriter, r *http.Request) {
