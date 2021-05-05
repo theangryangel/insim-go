@@ -9,7 +9,12 @@ function nsToTime(duration) {
     , minutes = parseInt((duration/(1000*60))%60)
     , hours = parseInt((duration/(1000*60*60))%24);
 
-   let output = minutes + "m" + seconds + "." + milliseconds + "s";
+   let output = seconds + "." + milliseconds + "s";
+
+   if (minutes > 0) {
+      output = minutes + "m" + output
+   }
+
    if (hours > 0) {
       output = hours + 'h' + output
    }

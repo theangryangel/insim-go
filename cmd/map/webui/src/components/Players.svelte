@@ -9,10 +9,10 @@
     { key: 'id', value: '#' },
     { key: 'Playername', value: 'Player' },
     { key: 'RaceLap', value: 'Lap' },
-    { key: 'Gaps.Next', value: 'Gap' },
-    { key: 'S1', value: 'Split 1' },
-    { key: 'S2', value: 'Split 1' },
-    { key: 'S3', value: 'Split 1' },
+    { key: 'GapNext', value: 'Next' },
+    { key: 'CurrentLapTiming.Split[0].Time', value: 'S1' },
+    { key: 'CurrentLapTiming.Split[1].Time', value: 'S2' },
+    { key: 'CurrentLapTiming.Split[2].Time', value: 'S3' },
     { key: 'BTime', value: 'Best Time' },
     { key: 'LTime', value: 'Last Time' },
     { key: 'TTime', value: 'Total Time' },
@@ -36,15 +36,32 @@
 </style>
 
 <DataTable
-  size="short"
-  expandable
+  size="compact"
+  zebra={true}
+  expandable={true}
   headers={headers}
-rows={rows}>
+  rows={rows}>
 
   <div slot="expanded-row" let:row>
-    <pre>
-      {JSON.stringify(row.Position, null, 2)}
-    </pre>
+
+    <DataTable
+      size="compact"
+      headers={[
+        { value: 'Lap', key: 'id' },
+        { value: 'S1', key: 'Split[0].Time'},
+        { value: 'S2', key: 'Split[1].Time' },
+        { value: 'S3', key: 'Split[2].Time' },
+        { value: 'Time', key: 'Time' },
+      ]}
+      rows={Object.entries(row.LapTimings).map(([lap, timing]) => { return {id: lap, ...timing} })}>
+    <span slot="cell" let:cell>
+      {#if cell.key.includes("Time")}
+<Duration duration={cell.value}/>
+      {/if}
+    </span>
+
+    </DataTable>
+
   </div>
 
   <span slot="cell" let:row let:cell>
@@ -52,6 +69,8 @@ rows={rows}>
       <Duration duration={cell.value}/>
     {:else if cell.key == 'Playername'}
       <Colours string={cell.value}/> {#if row.RaceFinished}🏁{/if} {#if row.PitLane}<Tag type="teal" size="sm">Pitlane</Tag>{/if}
+    {:else if cell.key.includes("Split")}
+      <Duration duration={cell.value}/>
     {:else}{cell.value}{/if}
   </span>
 

@@ -14,6 +14,19 @@
     9: '' // reset
   }
 
+  function sanitize(string) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        "/": '&#x2F;',
+    };
+    const reg = /[&<>"'/]/ig;
+    return string.replace(reg, (match)=>(map[match]));
+  }
+
   // Courtesy of https://apidocs.tc-gaming.co.uk/guides/converting-lfs-colours
   // with minor modifications
   function colourise(str) {
@@ -33,4 +46,4 @@
 </script>
 <style>
 </style>
-{@html colourise(string)}
+{@html colourise(sanitize(string))}

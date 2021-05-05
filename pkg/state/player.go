@@ -6,45 +6,20 @@ import (
 	"time"
 
 	"github.com/theangryangel/insim-go/pkg/facts"
+	"github.com/theangryangel/insim-go/pkg/geometry"
 	"github.com/theangryangel/insim-go/pkg/protocol"
 )
 
-type Position struct {
-	Speed uint16
-	X     int32
-	Y     int32
-	Z     int32
+type Split struct {
+	Time  time.Duration // time for this lap
+	ETime time.Duration // total duration
 }
 
-type Gaps struct {
-	// list of most recent splits 0=1, 1=2, 2=3, 4=start/finish
-	// used to help populate GTime
-	Duration [facts.MaxSplitCount + 1]time.Duration `json:"-"`
+type Lap struct {
+	Split [facts.MaxSplitCount + 1]*Split
 
-	// lap number by split index.
-	// i.e. last SPX, split = 0, lap was N, split = 1, lap was N-1
-	Lap [facts.MaxSplitCount + 1]uint16 `json:"-"`
-
-	Leader string // TODO
-
-	Next string // TODO it would be nice if this could be not just a string
-	Prev string
-}
-
-func (g *Gaps) Update(spx uint8, lap uint16, etime time.Duration) {
-	g.Duration[spx] = etime
-	g.Lap[spx] = lap
-}
-
-func (g *Gaps) Reset() {
-	for i := 0; i < facts.MaxSplitCount+1; i++ {
-		g.Duration[i] = time.Duration(0)
-		g.Lap[i] = 1
-	}
-
-	g.Next = ""
-	g.Prev = ""
-	g.Leader = ""
+	Time  time.Duration
+	ETime time.Duration
 }
 
 type Player struct {
@@ -64,11 +39,24 @@ type Player struct {
 
 	Vehicle string
 
-	TTime time.Duration // TODO json encode a string
+	TTime time.Duration
+	LTime time.Duration
 	BTime time.Duration
 
-	Gaps     Gaps
-	Position Position
+	// record a map of the splits
+	LapTimings map[uint16]*Lap
+
+	CurrentLapTiming *Lap
+
+	// record the lap number the last time we got a split
+	// i.e. split 1 on lap 1 is recorded as LastTimingLap[0] = 1
+	lapTimingSpx [facts.MaxSplitCount + 1]uint16
+
+	GapNext string
+	GapPrev string
+
+	Position geometry.FixedPoint
+	Speed    uint16
 
 	YellowFlag bool
 	BlueFlag   bool
@@ -85,8 +73,26 @@ func (p *Player) Reset() {
 	p.RaceFinished = false
 	p.TTime = time.Duration(0)
 	p.BTime = time.Duration(0)
+	p.LTime = time.Duration(0)
 	p.NumStops = 0
-	p.Gaps.Reset()
+	p.LapTimings = make(map[uint16]*Lap, 0)
+	p.CurrentLapTiming = nil
+	p.GapNext = ""
+	p.GapPrev = ""
+	for i := 0; i < facts.MaxSplitCount; i++ {
+		p.lapTimingSpx[i] = 1
+	}
+	p.RaceLap = 1
+}
+
+func (p *Player) GetLapTiming(lap uint16) *Lap {
+	l, ok := p.LapTimings[lap]
+	if !ok {
+		l = &Lap{}
+		p.LapTimings[lap] = l
+	}
+
+	return l
 }
 
 type PlayerList struct {
@@ -128,6 +134,7 @@ func (s *PlayerList) FromNpl(
 			ConnectionId: npl.Ucid,
 			Vehicle:      npl.CName,
 		}
+		s.Players[id].Reset()
 	}
 }
 
@@ -159,6 +166,7 @@ func (s *PlayerList) FromPlp(plp *protocol.Plp) {
 		v.PitLane = false
 		if !v.RaceFinished {
 			v.RacePosition = 0
+			v.Reset()
 		}
 	}
 }
@@ -178,7 +186,7 @@ func (s *PlayerList) FromMci(mci *protocol.Mci) {
 				v.RaceLap = info.Lap
 			}
 
-			v.Position.Speed = info.Speed
+			v.Speed = info.Speed
 			v.Position.X = info.X
 			v.Position.Y = info.Y
 			v.Position.Z = info.Z
@@ -274,17 +282,28 @@ func (s *PlayerList) FromLap(lap *protocol.Lap) {
 	id := lap.Plid
 
 	if v, ok := s.Players[id]; ok {
+		l := v.GetLapTiming(lap.LapsDone)
+		l.Time = lap.LapTime()
+
+		// record the lap as our "last split"
+
+		l.Split[facts.MaxSplitCount] = &Split{
+			Time:  lap.LapTime(),
+			ETime: lap.ElapsedTime(),
+		}
+
+		v.CurrentLapTiming = l
+		v.lapTimingSpx[facts.MaxSplitCount] = lap.LapsDone
+
 		if !v.RaceFinished {
+			v.LTime = lap.LapTime()
 			v.TTime = lap.ElapsedTime()
 
 			if v.BTime.Nanoseconds() <= 0 || lap.LapTime() < v.BTime {
 				v.BTime = lap.LapTime()
 			}
 
-			// we consider the lap to be the 4th "split"
-			v.Gaps.Update(facts.MaxSplitCount, v.RaceLap, lap.ElapsedTime())
 			s.UpdateGaps(id, facts.MaxSplitCount)
-
 		}
 		v.NumStops = uint32(lap.NumStops)
 	}
@@ -300,7 +319,16 @@ func (s *PlayerList) FromSpx(spx *protocol.Spx) {
 	id := spx.Plid
 
 	if v, ok := s.Players[id]; ok {
-		v.Gaps.Update(spx.Split-1, v.RaceLap, spx.ElapsedTime())
+		l := v.GetLapTiming(v.RaceLap)
+		v.CurrentLapTiming = l
+
+		l.Split[spx.Split-1] = &Split{
+			Time:  spx.SplitTime(),
+			ETime: spx.ElapsedTime(),
+		}
+
+		v.lapTimingSpx[spx.Split-1] = v.RaceLap
+
 		s.UpdateGaps(id, spx.Split-1)
 	}
 }
@@ -309,9 +337,13 @@ func (s *PlayerList) UpdateGaps(plid uint8, spx uint8) {
 	// TODO Fix "65534 laps" bug
 	// probably just a logic error around the "4th" split or "lap"
 
-	player, ok := s.Players[plid]
+	player, ok := s.Get(plid)
 	if !ok {
 		return
+	}
+
+	if player.RacePosition == 1 {
+		player.GapNext = ""
 	}
 
 	if player.RacePosition == 0 || player.RaceFinished {
@@ -327,21 +359,30 @@ func (s *PlayerList) UpdateGaps(plid uint8, spx uint8) {
 		if player.RacePosition == oplayer.RacePosition+1 {
 			// find the player in front of us
 
-			if player.Gaps.Lap[spx] == oplayer.Gaps.Lap[spx] {
+			if player.lapTimingSpx[spx] == oplayer.lapTimingSpx[spx] {
+				if oplayer.LapTimings[player.RaceLap] == nil || player.LapTimings[player.RaceLap] == nil {
+					return
+				}
+
+				if oplayer.LapTimings[player.RaceLap].Split[spx] == nil || player.LapTimings[player.RaceLap].Split[spx] == nil {
+					return
+				}
+
 				// are they are on the same lap?
-				gap := (oplayer.Gaps.Duration[spx] - player.Gaps.Duration[spx])
-				player.Gaps.Next = gap.String()
-				oplayer.Gaps.Prev = (-1 * gap).String()
+				gap := (oplayer.LapTimings[player.RaceLap].Split[spx].ETime - player.LapTimings[player.RaceLap].Split[spx].ETime)
+				player.GapNext = gap.String()
+				oplayer.GapPrev = (-1 * gap).String()
 			} else {
-				gap := int32(player.Gaps.Lap[spx] - oplayer.Gaps.Lap[spx])
-				player.Gaps.Next = fmt.Sprintf("%d laps", gap)
-				oplayer.Gaps.Prev = fmt.Sprintf("%d laps", -1*gap)
+
+				gap := int32(player.RaceLap) - int32(oplayer.RaceLap)
+				player.GapNext = fmt.Sprintf("%d laps", gap)
+				oplayer.GapPrev = fmt.Sprintf("%d laps", -1*gap)
 			}
 
 			return
 		}
 	}
 
-	player.Gaps.Next = ""
-	player.Gaps.Prev = ""
+	player.GapNext = ""
+	player.GapPrev = ""
 }

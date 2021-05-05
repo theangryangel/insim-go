@@ -28,9 +28,6 @@ type Event struct {
 type GameState struct {
 	Event Event
 
-	// TODO could do with a ConnectionList and PlayerList type to move some of these functions info
-	// Would allow less locking of the whole GameState
-	//Connections map[uint8]*Connection
 	Connections ConnectionList
 	Players     PlayerList
 }
