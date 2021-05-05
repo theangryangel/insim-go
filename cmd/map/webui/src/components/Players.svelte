@@ -38,31 +38,8 @@
 <DataTable
   size="compact"
   zebra={true}
-  expandable={true}
   headers={headers}
   rows={rows}>
-
-  <div slot="expanded-row" let:row>
-
-    <DataTable
-      size="compact"
-      headers={[
-        { value: 'Lap', key: 'id' },
-        { value: 'S1', key: 'Split[0].Time'},
-        { value: 'S2', key: 'Split[1].Time' },
-        { value: 'S3', key: 'Split[2].Time' },
-        { value: 'Time', key: 'Time' },
-      ]}
-      rows={Object.entries(row.LapTimings).map(([lap, timing]) => { return {id: lap, ...timing} })}>
-    <span slot="cell" let:cell>
-      {#if cell.key.includes("Time")}
-<Duration duration={cell.value}/>
-      {/if}
-    </span>
-
-    </DataTable>
-
-  </div>
 
   <span slot="cell" let:row let:cell>
     {#if ['BTime', 'TTime', 'LTime'].includes(cell.key)}

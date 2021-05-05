@@ -1,26 +1,27 @@
 <script>
   import {
     Header,
-    HeaderUtilities,
-    HeaderGlobalAction,
-    SkipToContent,
-    Content,
+
+    SideNav,
+    SideNavItems,
+
     Grid,
     Row,
     Column,
+
+    SkipToContent,
+    Content,
   } from "carbon-components-svelte";
-  import ChoroplethMap20 from "carbon-icons-svelte/lib/ChoroplethMap20";
-  import Chat20 from "carbon-icons-svelte/lib/Chat20";
+
+  import { Router, Link, Route } from "svelte-routing";
 
   import { onMount } from 'svelte'
 
-  import Messages from './components/Messages.svelte';
-  import Players from './components/Players.svelte'
-  import Map from './components/Map.svelte'
+  import Messages from './components/Messages.svelte'
+  import LeaderBoard from './pages/LeaderBoard.svelte'
   import { SSE } from './sse.js'
 
-  let showMap = true;
-  let showChat = true;
+  let isSideNavOpen = false;
 
   let es = new SSE();
 
@@ -28,37 +29,45 @@
     es.dial()
   });
 </script>
+<Router>
+  <Header persistentHamburgerMenu={true} company="insim.go" platformName="LiveMap"  bind:isSideNavOpen>
+    <div slot="skip-to-content">
+      <SkipToContent />
+    </div>
 
-<Header company="insim.go" platformName="LiveMap">
-  <div slot="skip-to-content">
-    <SkipToContent />
-  </div>
+    <SideNav bind:isOpen={isSideNavOpen}>
+      <SideNavItems>
+        <li class:bx--side-nav__item="{true}">
+          <Link class="bx--side-nav__link" to="/"><span class:bx--side-nav__link-text="{true}">Leaderboard</span></Link>
+        </li>
+        <li class:bx--side-nav__item="{true}">
+          <Link class="bx--side-nav__link" to="lap"><span class:bx--side-nav__link-text="{true}">Lap Chart</span></Link>
+        </li>
+      </SideNavItems>
+    </SideNav>
+  </Header>
 
-  <HeaderUtilities>
-  <HeaderGlobalAction aria-label="Map" icon={ChoroplethMap20} isActive={showMap} on:click={() => { showMap = !showMap }}/>
-  <HeaderGlobalAction aria-label="Map" icon={Chat20} isActive={showChat} on:click={() => { showChat = !showChat }}/>
-  </HeaderUtilities>
-</Header>
+  <Content>
 
-<Content>
-  <Grid noGutter={true}>
-    <Row>
-      {#if showMap}
-      <Column sm={16} md={6} lg={6}>
-        <Map/>
-      </Column>
-      {/if}
-      <Column sm={16} md={10} lg={10}>
-        <Players/>
-      </Column>
-    </Row>
+  <Grid noGutter>
+      <Route path="about">
+        about
+      </Route>
 
-    {#if showChat}
-    <Row>
+      <Route path="blog">
+        blog
+      </Route>
+      <Route path="/">
+        <LeaderBoard/>
+      </Route>
+
+
+      <Row>
       <Column>
-        <Messages />
+      <Messages />
       </Column>
-    </Row>
-    {/if}
-  </Grid>
-</Content>
+      </Row>
+
+    </Grid>
+  </Content>
+</Router>
