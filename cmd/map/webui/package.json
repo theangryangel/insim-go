@@ -20,7 +20,7 @@
   "dependencies": {
     "@svelte-parts/zoom": "^0.0.18",
     "leaflet": "^1.7.1",
-    "svelte": "3.38.1",
+    "svelte": "3.38.2",
     "timeago.js": "4.0.2"
   }
 }
