@@ -6,7 +6,7 @@ export class SSE {
   }
 
   dial() {
-    this.es = new EventSource(`/events`);
+    this.es = new EventSource(`/api/live`);
     this.es.onerror = () => {
       console.log(`EventSource error`);
       console.log("Reconnecting in 1s", true);

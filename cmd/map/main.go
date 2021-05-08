@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/theangryangel/insim-go/pkg/files"
 	"github.com/theangryangel/insim-go/pkg/protocol"
@@ -14,9 +15,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"time"
-
 	"net/http"
+	"path/filepath"
+	"time"
 
 	sse "github.com/alexandrevicenzi/go-sse"
 
@@ -38,6 +39,29 @@ type chat struct {
 
 	Plid uint8
 	Ucid uint8
+}
+
+func CleanPath(path string) string {
+	// Deal with empty strings nicely.
+	if path == "" {
+		return ""
+	}
+
+	// Ensure that all paths are cleaned (especially problematic ones like
+	// "/../../../../../" which can cause lots of issues).
+	path = filepath.Clean(path)
+
+	// If the path isn't absolute, we need to do more processing to fix paths
+	// such as "../../../../<etc>/some/path". We also shouldn't convert absolute
+	// paths to relative ones.
+	if !filepath.IsAbs(path) {
+		path = filepath.Clean(string(os.PathSeparator) + path)
+		// This can't fail, as (by definition) all paths are relative to root.
+		path, _ = filepath.Rel(string(os.PathSeparator), path)
+	}
+
+	// Clean the path again for good measure.
+	return filepath.Clean(path)
 }
 
 func main() {
@@ -62,14 +86,14 @@ func main() {
 
 	c.On(func(client *session.InsimSession, mci *protocol.Mci) {
 		for _, info := range mci.Info {
-			if v, ok := c.GameState.Players.Get(info.Plid); ok {
+			if v, ok := client.GameState.Players.Get(info.Plid); ok {
 				data, err := json.Marshal(playerState{Plid: info.Plid, State: v})
 				if err != nil {
 					continue
 				}
 
 				s.SendMessage(
-					"/events",
+					"/api/live",
 					sse.NewMessage(
 						"",             // id
 						string(data),   // data
@@ -87,7 +111,7 @@ func main() {
 		}
 
 		s.SendMessage(
-			"/events",
+			"/api/live",
 			sse.NewMessage(
 				"", // id
 				string(data),
@@ -115,7 +139,7 @@ func main() {
 			}
 
 			s.SendMessage(
-				"/events",
+				"/api/live",
 				sse.NewMessage(
 					"", // id
 					string(data),
@@ -173,7 +197,7 @@ func main() {
 		}
 
 		s.SendMessage(
-			"/events",
+			"/api/live",
 			sse.NewMessage(
 				"",              // id
 				string(chatmsg), // event
@@ -187,7 +211,7 @@ func main() {
 		}
 
 		s.SendMessage(
-			"/events",
+			"/api/live",
 			sse.NewMessage(
 				"",               // id
 				string(gamedata), // event
@@ -210,7 +234,7 @@ func main() {
 			}
 			fmt.Println(data)
 			s.SendMessage(
-				"/events",
+				"/api/live",
 				sse.NewMessage(
 					"", // id
 					string(data),
@@ -235,7 +259,7 @@ func main() {
 				return
 			}
 			s.SendMessage(
-				"/events",
+				"/api/live",
 				sse.NewMessage(
 					"", // id
 					string(data),
@@ -283,7 +307,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	r.Method("GET", "/*", fs)
 
-	r.Mount("/events", s)
+	r.Mount("/api/live", s)
 
 	r.Get("/api/connections", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, &c.GameState.Connections)
@@ -298,11 +322,17 @@ func main() {
 	})
 
 	r.Get("/track/{code}", func(w http.ResponseWriter, r *http.Request) {
-		track := chi.URLParam(r, "code")
+		track := CleanPath(chi.URLParam(r, "code"))
 
 		pth := files.Pth{}
-		// TODO this is massively unsafe
-		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
+		pth.Read(
+			filepath.Join(
+				"..",
+				"pth",
+				"data",
+				fmt.Sprintf("%s.pth", track),
+			),
+		)
 
 		fit := pth.FitTo(1024, 1024, 2)
 
@@ -344,11 +374,17 @@ func main() {
 	})
 
 	r.Get("/api/track/{code}", func(w http.ResponseWriter, r *http.Request) {
-		track := chi.URLParam(r, "code")
+		track := CleanPath(chi.URLParam(r, "code"))
 
 		pth := files.Pth{}
-		// TODO this is massively unsafe
-		pth.Read(fmt.Sprintf("../pth/data/%s.pth", track))
+		pth.Read(
+			filepath.Join(
+				"..",
+				"pth",
+				"data",
+				fmt.Sprintf("%s.pth", track),
+			),
+		)
 
 		fit := pth.FitTo(1024, 1024, 2)
 

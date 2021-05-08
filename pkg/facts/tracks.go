@@ -2,7 +2,6 @@ package facts
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Track struct {
@@ -38,9 +37,23 @@ var Tracks = []Track{
 	{Name: "Drag Strip", Code: "AU3", License: "S1"},
 	{Name: "Drag Strip (8 Lane)", Code: "AU4", License: "S1"},
 
-	// Missing all the S2 tracks
+	{Name: "Kyoto Oval", Code: "KY1", License: "S2"},
+	{Name: "Kyoto National", Code: "KY2", License: "S2"},
+	{Name: "Kyoto GP Long", Code: "KY3", License: "S2"},
 
-	{Name: "Westhill 1", Code: "WE1", License: "S2"},
+	{Name: "Westhill National", Code: "WE1", License: "S2"},
+	{Name: "Westhill International", Code: "WE2", License: "S2"},
+	{Name: "Westhill Car Park", Code: "WE3", License: "S2"},
+	{Name: "Westhill Karting", Code: "WE4", License: "S2"},
+	{Name: "Westhill Karting National", Code: "WE5", License: "S2"},
+
+	{Name: "Aston Cadet", Code: "AS1", License: "S2"},
+	{Name: "Aston	Club", Code: "AS2", License: "S2"},
+	{Name: "Aston National", Code: "AS3", License: "S2"},
+	{Name: "Aston Historic", Code: "AS4", License: "S2"},
+	{Name: "Aston Grand Prix", Code: "AS5", License: "S2"},
+	{Name: "Aston Grand Touring", Code: "AS6", License: "S2"},
+	{Name: "Aston North", Code: "AS7", License: "S2"},
 
 	{Name: "Rockingham ISSC", Code: "RO1", License: "S3"},
 	{Name: "Rockingham National", Code: "RO2", License: "S3"},
@@ -61,8 +74,6 @@ func TrackFromCode(code string) (*Track, error) {
 			return &t, nil
 		}
 	}
-
-	fmt.Println("Unknown track %s", code)
 
 	return nil, ErrUnknownTrack
 }

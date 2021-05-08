@@ -46,6 +46,7 @@
       <Duration duration={cell.value}/>
     {:else if cell.key == 'Playername'}
       <Colours string={cell.value}/> {#if row.RaceFinished}🏁{/if} {#if row.PitLane}<Tag type="teal" size="sm">Pitlane</Tag>{/if}
+      <br/><small>{row.Vehicle}</small>
     {:else if cell.key.includes("Split")}
       <Duration duration={cell.value}/>
     {:else}{cell.value}{/if}

@@ -13,6 +13,8 @@ import (
 type Split struct {
 	Time  time.Duration // time for this lap
 	ETime time.Duration // total duration
+
+	RacePosition uint8
 }
 
 type Lap struct {
@@ -252,6 +254,7 @@ func (s *PlayerList) FromFin(fin *protocol.Fin) {
 		v.RaceFinished = true
 		v.TTime = fin.TotalTime()
 		v.BTime = fin.BestTime()
+		v.RaceLap = fin.LapsDone
 	}
 }
 
@@ -267,6 +270,7 @@ func (s *PlayerList) FromRes(fin *protocol.Res) {
 	if v, ok := s.Players[id]; ok {
 		v.RaceFinished = true
 		v.RacePosition = fin.RacePosition()
+		v.RaceLap = fin.LapsDone
 		v.TTime = fin.TotalTime()
 		v.BTime = fin.BestTime()
 	}
@@ -286,10 +290,11 @@ func (s *PlayerList) FromLap(lap *protocol.Lap) {
 		l.Time = lap.LapTime()
 
 		// record the lap as our "last split"
-
+		// so we can use this for our gaps calc
 		l.Split[facts.MaxSplitCount] = &Split{
-			Time:  lap.LapTime(),
-			ETime: lap.ElapsedTime(),
+			Time:         lap.LapTime(),
+			ETime:        lap.ElapsedTime(),
+			RacePosition: v.RacePosition,
 		}
 
 		v.CurrentLapTiming = l
@@ -323,8 +328,9 @@ func (s *PlayerList) FromSpx(spx *protocol.Spx) {
 		v.CurrentLapTiming = l
 
 		l.Split[spx.Split-1] = &Split{
-			Time:  spx.SplitTime(),
-			ETime: spx.ElapsedTime(),
+			Time:         spx.SplitTime(),
+			ETime:        spx.ElapsedTime(),
+			RacePosition: v.RacePosition,
 		}
 
 		v.lapTimingSpx[spx.Split-1] = v.RaceLap
@@ -334,9 +340,6 @@ func (s *PlayerList) FromSpx(spx *protocol.Spx) {
 }
 
 func (s *PlayerList) UpdateGaps(plid uint8, spx uint8) {
-	// TODO Fix "65534 laps" bug
-	// probably just a logic error around the "4th" split or "lap"
-
 	player, ok := s.Get(plid)
 	if !ok {
 		return
@@ -351,29 +354,30 @@ func (s *PlayerList) UpdateGaps(plid uint8, spx uint8) {
 		return
 	}
 
+	if player.LapTimings[player.RaceLap] == nil || player.LapTimings[player.RaceLap].Split[spx] == nil {
+		// we're missing data. probably joined half way through a race.
+		// bail out early.
+		return
+	}
+
 	for oplid, oplayer := range s.Players {
 		if oplid == plid {
 			continue
 		}
 
+		// find the player in front of us
 		if player.RacePosition == oplayer.RacePosition+1 {
-			// find the player in front of us
+			if oplayer.LapTimings[player.RaceLap] == nil || oplayer.LapTimings[player.RaceLap].Split[spx] == nil {
+				// missing data, probably joined midway through a race.
+				return
+			}
 
+			// are they are on the same lap?
 			if player.lapTimingSpx[spx] == oplayer.lapTimingSpx[spx] {
-				if oplayer.LapTimings[player.RaceLap] == nil || player.LapTimings[player.RaceLap] == nil {
-					return
-				}
-
-				if oplayer.LapTimings[player.RaceLap].Split[spx] == nil || player.LapTimings[player.RaceLap].Split[spx] == nil {
-					return
-				}
-
-				// are they are on the same lap?
 				gap := (oplayer.LapTimings[player.RaceLap].Split[spx].ETime - player.LapTimings[player.RaceLap].Split[spx].ETime)
 				player.GapNext = gap.String()
 				oplayer.GapPrev = (-1 * gap).String()
 			} else {
-
 				gap := int32(player.RaceLap) - int32(oplayer.RaceLap)
 				player.GapNext = fmt.Sprintf("%d laps", gap)
 				oplayer.GapPrev = fmt.Sprintf("%d laps", -1*gap)
