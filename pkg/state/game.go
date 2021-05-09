@@ -93,6 +93,10 @@ func (s *Event) FromRst(rst *protocol.Rst) {
 	s.QualifyingDuration = rst.QualifyingDuration()
 }
 
+func (s *GameState) FromReo(reo *protocol.Reo) {
+	s.Players.FromReo(reo)
+}
+
 func (s *GameState) FromVtn(vtn *protocol.Vtn) {
 	s.Event.FromVtn(vtn)
 }

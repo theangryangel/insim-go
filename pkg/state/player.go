@@ -33,9 +33,10 @@ type Player struct {
 
 	ConnectionId uint8
 
-	RacePosition uint8
-	RaceLap      uint16
-	RaceFinished bool
+	RaceStartPosition uint8
+	RacePosition      uint8
+	RaceLap           uint16
+	RaceFinished      bool
 
 	NumStops uint32
 
@@ -389,4 +390,20 @@ func (s *PlayerList) UpdateGaps(plid uint8, spx uint8) {
 
 	player.GapNext = ""
 	player.GapPrev = ""
+}
+
+func (s *PlayerList) FromReo(reo *protocol.Reo) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Players == nil {
+		return
+	}
+
+	fmt.Printf("REO: nump=%d players=%v\n", reo.NumP, reo.Plid)
+
+	for idx := 0; idx < int(reo.NumP); idx++ {
+		if p, ok := s.Get(reo.Plid[idx]); ok {
+			p.RaceStartPosition = uint8(idx) + 1
+		}
+	}
 }

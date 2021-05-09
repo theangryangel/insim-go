@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/theangryangel/insim-go/pkg/files"
 	"github.com/theangryangel/insim-go/pkg/protocol"
@@ -321,6 +322,43 @@ func main() {
 		render.JSON(w, r, &c.GameState)
 	})
 
+	r.Get("/simplified/{code}", func(w http.ResponseWriter, r *http.Request) {
+		track := CleanPath(chi.URLParam(r, "code"))
+
+		pth := files.Pth{}
+		pth.Read(
+			filepath.Join(
+				"..",
+				"pth",
+				"data",
+				fmt.Sprintf("%s.pth", track),
+			),
+		)
+
+		fit := pth.FitTo(512, 512, 4)
+
+		var b bytes.Buffer
+		buf := io.Writer(&b)
+
+		// trackcolour string, limitcolour string, linecolour string, startfinishcolour string
+
+		const trackcolour = "#1F2937"
+
+		s := svg.New(buf)
+		s.Start(512, 512, "style=\"border: 1px solid red\"")
+
+		s.Polyline(
+			fit.RoadCX, fit.RoadCY,
+			fmt.Sprintf("stroke: %s; stroke-width: 5px; fill: none", trackcolour),
+		)
+		s.End()
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Write(
+			[]byte(b.String()),
+		)
+	})
+
 	r.Get("/track/{code}", func(w http.ResponseWriter, r *http.Request) {
 		track := CleanPath(chi.URLParam(r, "code"))
 
@@ -334,12 +372,10 @@ func main() {
 			),
 		)
 
-		fit := pth.FitTo(1024, 1024, 2)
+		fit := pth.FitTo(512, 512, 2)
 
 		var b bytes.Buffer
 		buf := io.Writer(&b)
-
-		// trackcolour string, limitcolour string, linecolour string, startfinishcolour string
 
 		const trackcolour = "#1F2937"
 		const limitcolour = "#059669"
@@ -347,7 +383,7 @@ func main() {
 		const startfinishcolour = "#ffffff"
 
 		s := svg.New(buf)
-		s.Start(1024, 1024, "style=\"border: 1px solid red\"")
+		s.Start(512, 512, "style=\"border: 1px solid red\"")
 		s.Polygon(
 			fit.OuterX, fit.OuterY,
 			fmt.Sprintf("stroke: %s; stroke-width:2px; fill: %s; fill-rule: evenodd", limitcolour, limitcolour),
@@ -376,6 +412,19 @@ func main() {
 	r.Get("/api/track/{code}", func(w http.ResponseWriter, r *http.Request) {
 		track := CleanPath(chi.URLParam(r, "code"))
 
+		resolution := 2
+		simplified := r.URL.Query().Get("simplified")
+
+		qsize := r.URL.Query().Get("size")
+		if qsize == "" {
+			qsize = "512"
+		}
+
+		size, err := strconv.Atoi(qsize)
+		if err != nil {
+			render.Status(r, 400)
+		}
+
 		pth := files.Pth{}
 		pth.Read(
 			filepath.Join(
@@ -386,7 +435,7 @@ func main() {
 			),
 		)
 
-		fit := pth.FitTo(1024, 1024, 2)
+		fit := pth.FitTo(float64(size), float64(size), 2)
 
 		var payload struct {
 			Fit   files.PthFit
@@ -394,7 +443,13 @@ func main() {
 		}
 
 		payload.Fit = fit
-		payload.Image = fmt.Sprintf("/track/%s", track)
+		payload.Image = fmt.Sprintf(
+			"/track/%s?size=%d&resolution=%d&simplified=%s",
+			track,
+			size,
+			resolution,
+			simplified,
+		)
 
 		render.JSON(w, r, payload)
 	})

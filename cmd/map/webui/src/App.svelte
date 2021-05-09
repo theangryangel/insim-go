@@ -19,6 +19,7 @@
 
   import Messages from './components/Messages.svelte'
   import LeaderBoard from './pages/LeaderBoard.svelte'
+  import LapChart from './pages/LapChart.svelte'
   import { SSE } from './sse.js'
 
   let isSideNavOpen = false;
@@ -54,9 +55,10 @@
         about
       </Route>
 
-      <Route path="blog">
-        blog
+      <Route path="lap">
+        <LapChart/>
       </Route>
+
       <Route path="/">
         <LeaderBoard/>
       </Route>

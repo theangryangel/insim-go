@@ -28,6 +28,7 @@ func useBuiltInPackets(c *InsimSession) {
 
 	c.RegisterPacket(protocol.ISP_ISM, protocol.NewIsm)
 	c.RegisterPacket(protocol.ISP_RST, protocol.NewRst)
+	c.RegisterPacket(protocol.ISP_REO, protocol.NewReo)
 	c.RegisterPacket(protocol.ISP_SPX, protocol.NewSpx)
 	c.RegisterPacket(protocol.ISP_LAP, protocol.NewLap)
 	c.RegisterPacket(protocol.ISP_FIN, protocol.NewFin)
