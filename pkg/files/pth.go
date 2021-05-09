@@ -76,18 +76,20 @@ type Pth struct {
 	Nodes []PthNode
 }
 
-func (p *Pth) Read(file string) (err error) {
+func NewPth(file string) (*Pth, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	p := &Pth{}
 
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return p, nil
 }
 
 func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
