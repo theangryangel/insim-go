@@ -11,7 +11,7 @@
     "@snowpack/plugin-svelte": "3.6.1",
     "carbon-components-svelte": "0.33.0",
     "carbon-icons-svelte": "10.28.0",
-    "postcss": "8.2.14",
+    "postcss": "8.2.15",
     "postcss-cli": "8.3.1",
     "postcss-import": "14.0.1",
     "snowpack": "3.3.7",
