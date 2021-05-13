@@ -8,7 +8,7 @@
     "@jadex/snowpack-plugin-tailwindcss-jit": "0.2.0",
     "@snowpack/plugin-postcss": "1.2.2",
     "@snowpack/plugin-sass": "1.4.0",
-    "@snowpack/plugin-svelte": "3.6.1",
+    "@snowpack/plugin-svelte": "3.7.0",
     "carbon-components-svelte": "0.33.0",
     "carbon-icons-svelte": "10.28.0",
     "postcss": "8.2.15",
