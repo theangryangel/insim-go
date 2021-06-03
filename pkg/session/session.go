@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"time"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
 	"github.com/theangryangel/insim-go/pkg/state"
@@ -94,7 +95,7 @@ func (c *InsimSession) On(handler interface{}) {
 }
 
 func (c *InsimSession) Dial(address string) error {
-	conn, err := net.Dial("tcp", address)
+	conn, err := net.DialTimeout("tcp", address, time.Second*10)
 	if err != nil {
 		return err
 	}
