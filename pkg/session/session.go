@@ -2,6 +2,7 @@ package session
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -204,34 +205,52 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 	return err
 }
 
-func (c *InsimSession) Scan() error {
+func (c *InsimSession) Scan(ctx context.Context) error {
 
-	for c.scanner.Scan() {
-		buf := c.scanner.Bytes()
+	errs := make(chan error)
+	lines := make(chan []byte)
 
-		packet, err := c.Unmarshal(buf[1:])
-		if err != nil {
-			if err == ErrUnknownType {
-				fmt.Println("Unknown Packet", buf[1])
-			} else {
+	go func() {
+		for c.scanner.Scan() {
+			lines <- c.scanner.Bytes()
+		}
+
+		if err := c.scanner.Err(); err != nil {
+			fmt.Printf("Invalid input: %s", err)
+			errs <- err
+			return
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case err := <-errs:
+			if ctx.Err() == nil {
 				return err
 			}
+		case buf := <-lines:
+			if ctx.Err() != nil {
+				return nil
+			}
+
+			packet, err := c.Unmarshal(buf[1:])
+			if err != nil {
+				if err == ErrUnknownType {
+					fmt.Println("Unknown Packet", buf[1])
+				} else {
+					return err
+				}
+			}
+
+			if packet != nil {
+				c.PreCall(packet)
+				c.Call(packet)
+				continue
+			}
 		}
-
-		if packet != nil {
-			c.PreCall(packet)
-			c.Call(packet)
-			continue
-		}
-
 	}
-
-	if err := c.scanner.Err(); err != nil {
-		fmt.Printf("Invalid input: %s", err)
-		return err
-	}
-
-	return nil
 }
 
 func (c *InsimSession) PreCall(data interface{}) {
