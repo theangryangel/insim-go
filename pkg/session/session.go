@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
@@ -15,8 +16,9 @@ import (
 
 type InsimSession struct {
 	conn    net.Conn
-	writer  *bufio.Writer
 	scanner *bufio.Scanner
+	writer  *bufio.Writer
+	writeMu sync.Mutex
 
 	TimeoutDuration time.Duration
 
@@ -123,7 +125,6 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 		next := int(data[0])
 
 		if next > len(data) {
-			fmt.Println("Not enough data, only", len(data), "available")
 			return 0, nil, nil
 		}
 
@@ -175,7 +176,8 @@ func (c *InsimSession) RequestState() (err error) {
 }
 
 func (c *InsimSession) Write(packet protocol.Packet) error {
-	// TODO: Do we need to find a way to do the 2 writes atomically?
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
 
 	data, err := packet.MarshalInsim()
 	if err != nil {
@@ -205,7 +207,7 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 		panic(err)
 	}
 
-	c.writer.Flush()
+	err = c.writer.Flush()
 	return err
 }
 
