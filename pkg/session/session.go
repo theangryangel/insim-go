@@ -18,6 +18,8 @@ type InsimSession struct {
 	writer  *bufio.Writer
 	scanner *bufio.Scanner
 
+	TimeoutDuration time.Duration
+
 	types    map[uint8]func() protocol.Packet
 	pre      map[reflect.Type][]reflect.Value
 	handlers map[reflect.Type][]reflect.Value
@@ -26,7 +28,9 @@ type InsimSession struct {
 }
 
 func NewInsimSession() *InsimSession {
-	return &InsimSession{}
+	return &InsimSession{
+		TimeoutDuration: time.Second * 70,
+	}
 }
 
 func (c *InsimSession) RegisterPacket(ptype uint8, f func() protocol.Packet) {
@@ -231,12 +235,18 @@ func (c *InsimSession) Scan(ctx context.Context) error {
 			c.Close()
 			return nil
 		case err := <-errs:
-			if ctx.Err() == nil {
-				return err
+			if ctx.Err() != nil {
+				return nil
 			}
+
+			return err
 		case t := <-timeout.C:
-			if time.Now().Sub(last).Seconds() >= 70 {
-				fmt.Printf("Insim timeout at %s\n", t)
+			if ctx.Err() != nil {
+				return nil
+			}
+
+			if time.Now().Sub(last) >= c.TimeoutDuration {
+				fmt.Printf("Insim timeout at %s after %s\n", t, c.TimeoutDuration)
 				return ErrTimeout
 			}
 		case buf := <-lines:
