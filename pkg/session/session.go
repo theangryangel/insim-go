@@ -206,9 +206,12 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 }
 
 func (c *InsimSession) Scan(ctx context.Context) error {
-
 	errs := make(chan error)
 	lines := make(chan []byte)
+
+	last := time.Now()
+	timeout := time.NewTicker(10 * time.Second)
+	defer timeout.Stop()
 
 	go func() {
 		for c.scanner.Scan() {
@@ -230,10 +233,17 @@ func (c *InsimSession) Scan(ctx context.Context) error {
 			if ctx.Err() == nil {
 				return err
 			}
+		case t := <-timeout.C:
+			if time.Now().Sub(last).Seconds() >= 70 {
+				fmt.Printf("Insim timeout at %s\n", t)
+				return ErrTimeout
+			}
 		case buf := <-lines:
 			if ctx.Err() != nil {
 				return nil
 			}
+
+			last = time.Now()
 
 			packet, err := c.Unmarshal(buf[1:])
 			if err != nil {
