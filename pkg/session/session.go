@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/theangryangel/insim-go/pkg/protocol"
-	"github.com/theangryangel/insim-go/pkg/state"
 )
 
 type InsimSession struct {
@@ -25,8 +24,6 @@ type InsimSession struct {
 	types    map[uint8]func() protocol.Packet
 	pre      map[reflect.Type][]reflect.Value
 	handlers map[reflect.Type][]reflect.Value
-
-	GameState state.GameState
 }
 
 func NewInsimSession() *InsimSession {
@@ -134,7 +131,6 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 
 	c.Use(useBuiltInPackets)
 	c.Use(usePing)
-	c.Use(useGameState)
 	return nil
 }
 
