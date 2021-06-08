@@ -13,6 +13,9 @@ type Track struct {
 var ErrUnknownTrack = errors.New("Unknown Track")
 
 var Tracks = []Track{
+
+	// TODO: Add reverse, etc.
+
 	{Name: "Blackwood GP", Code: "BL1", License: "S1"},
 	{Name: "Blackwood Historic", Code: "BL2", License: "S1"},
 	{Name: "Blackwood RallyX", Code: "BL3", License: "S1"},
