@@ -156,6 +156,7 @@ func (c *InsimSession) RequestState() (err error) {
 		protocol.TINY_SST,
 		protocol.TINY_NCN,
 		protocol.TINY_NPL,
+		protocol.TINY_RST,
 	}
 	req := protocol.NewTiny().(*protocol.Tiny)
 
