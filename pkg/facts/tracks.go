@@ -4,16 +4,17 @@ import (
 	"errors"
 )
 
+// ErrUnknownTrack is the Unknown Track Error
+var ErrUnknownTrack = errors.New("Unknown Track")
+
+// Track defines facts about a track
 type Track struct {
 	Name    string
 	Code    string
 	License string
 }
 
-var ErrUnknownTrack = errors.New("Unknown Track")
-
-var Tracks = []Track{
-
+var tracks = []Track{
 	// TODO: Add reverse, etc.
 
 	{Name: "Blackwood GP", Code: "BL1", License: "S1"},
@@ -71,8 +72,9 @@ var Tracks = []Track{
 	{Name: "Rockingham Sportscar", Code: "RO11", License: "S3"},
 }
 
+// TrackFromCode looks up the track from code
 func TrackFromCode(code string) (*Track, error) {
-	for _, t := range Tracks {
+	for _, t := range tracks {
 		if t.Code == code {
 			return &t, nil
 		}

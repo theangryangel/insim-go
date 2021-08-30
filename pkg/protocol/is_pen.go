@@ -5,28 +5,30 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspPen ...
 const (
-	ISP_PEN = 30
+	IspPen = 30
 
 	// Penalty types
-	PENALTY_NONE     = 0
-	PENALTY_DT       = 1
-	PENALTY_DT_VALID = 2
-	PENALTY_SG       = 3
-	PENALTY_SG_VALID = 4
-	PENALTY_30       = 5
-	PENALTY_45       = 6
+	PenaltyNone    = 0
+	PenaltyDT      = 1
+	PenaltyDTValid = 2
+	PenaltySG      = 3
+	PenaltySGValid = 4
+	Penalty30sec   = 5
+	Penalty45sec   = 6
 
 	// Penatly Reasons
-	PENR_UNKNOWN     = 0
-	PENR_ADMIN       = 1
-	PENR_WRONG_WAY   = 2
-	PENR_FALSE_START = 3
-	PENR_SPEEDING    = 4
-	PENR_STOP_SHORT  = 5
-	PENR_STOP_LATE   = 6
+	PenaltyReasonUnknown    = 0
+	PenaltyReasonAdmin      = 1
+	PenaltyReasonWrongWay   = 2
+	PenaltyReasonFalseStart = 3
+	PenaltyReasonSpeeding   = 4
+	PenaltyReasonStopShort  = 5
+	PenaltyReasonStopLate   = 6
 )
 
+// Pen ...
 type Pen struct {
 	ReqI uint8 `struct:"uint8"`
 	Plid uint8 `struct:"uint8"`
@@ -37,22 +39,27 @@ type Pen struct {
 	Sp3    uint8 `struct:"uint8"`
 }
 
+// UnmarshalInsim ...
 func (p *Pen) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Pen) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Pen) Type() uint8 {
-	return ISP_PLL
+	return IspPen
 }
 
+// NewPen ...
 func NewPen() Packet {
 	return &Pen{}
 }
 
+// New ...
 func (p *Pen) New() Packet {
 	return NewPen()
 }

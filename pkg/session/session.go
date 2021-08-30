@@ -13,6 +13,7 @@ import (
 	"github.com/theangryangel/insim-go/pkg/protocol"
 )
 
+// InsimSession ...
 type InsimSession struct {
 	conn    net.Conn
 	scanner *bufio.Scanner
@@ -26,12 +27,14 @@ type InsimSession struct {
 	handlers map[reflect.Type][]reflect.Value
 }
 
+// NewInsimSession ...
 func NewInsimSession() *InsimSession {
 	return &InsimSession{
 		TimeoutDuration: time.Second * 70,
 	}
 }
 
+// RegisterPacket ...
 func (c *InsimSession) RegisterPacket(ptype uint8, f func() protocol.Packet) {
 	if c.types == nil {
 		c.types = make(map[uint8]func() protocol.Packet)
@@ -40,6 +43,7 @@ func (c *InsimSession) RegisterPacket(ptype uint8, f func() protocol.Packet) {
 	c.types[ptype] = f
 }
 
+// Unmarshal ...
 func (c *InsimSession) Unmarshal(data []byte) (packet protocol.Packet, err error) {
 	ptype := uint8(data[0])
 
@@ -55,6 +59,7 @@ func (c *InsimSession) Unmarshal(data []byte) (packet protocol.Packet, err error
 	return nil, ErrUnknownType
 }
 
+// PreOn ...
 func (c *InsimSession) PreOn(handler interface{}) {
 	// PreOn handlers are run synchonrously before On handlers.
 	// Think of it a bit like middleware in http servers.
@@ -80,6 +85,7 @@ func (c *InsimSession) PreOn(handler interface{}) {
 	c.pre[ptype] = append(c.pre[ptype], r)
 }
 
+// On ...
 func (c *InsimSession) On(handler interface{}) {
 	// Warning: non-idomatic code ahead.
 	// See PreOn method.
@@ -98,6 +104,7 @@ func (c *InsimSession) On(handler interface{}) {
 	c.handlers[ptype] = append(c.handlers[ptype], r)
 }
 
+// Dial ...
 func (c *InsimSession) Dial(address string) error {
 	conn, err := net.DialTimeout("tcp", address, time.Second*10)
 	if err != nil {
@@ -107,10 +114,12 @@ func (c *InsimSession) Dial(address string) error {
 	return c.UseConn(conn)
 }
 
+// Use ...
 func (c *InsimSession) Use(f func(*InsimSession)) {
 	f(c)
 }
 
+// UseConn ...
 func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	c.conn = conn
 	c.scanner = bufio.NewScanner(c.conn)
@@ -134,6 +143,7 @@ func (c *InsimSession) UseConn(conn net.Conn) (err error) {
 	return nil
 }
 
+// Init ...
 func (c *InsimSession) Init() (err error) {
 	isi := protocol.NewInit()
 
@@ -144,19 +154,21 @@ func (c *InsimSession) Init() (err error) {
 	return nil
 }
 
+// SelectRelayHost ...
 func (c *InsimSession) SelectRelayHost(hostname string) (err error) {
-	sel := protocol.NewIrpSel().(*protocol.IrpSel)
+	sel := protocol.NewIrpSel().(*protocol.RelaySel)
 	sel.HName = hostname
 	return c.Write(sel)
 }
 
+// RequestState ...
 func (c *InsimSession) RequestState() (err error) {
 	subts := [...]uint8{
-		protocol.TINY_VER,
-		protocol.TINY_SST,
-		protocol.TINY_NCN,
-		protocol.TINY_NPL,
-		protocol.TINY_RST,
+		protocol.TinyVer,
+		protocol.TinySST,
+		protocol.TinyNCN,
+		protocol.TinyNPL,
+		protocol.TinyRST,
 	}
 	req := protocol.NewTiny().(*protocol.Tiny)
 
@@ -172,6 +184,7 @@ func (c *InsimSession) RequestState() (err error) {
 	return nil
 }
 
+// Write ...
 func (c *InsimSession) Write(packet protocol.Packet) error {
 	c.writeMu.Lock()
 	defer c.writeMu.Unlock()
@@ -208,6 +221,7 @@ func (c *InsimSession) Write(packet protocol.Packet) error {
 	return err
 }
 
+// Scan ...
 func (c *InsimSession) Scan(ctx context.Context) error {
 	errs := make(chan error)
 	lines := make(chan []byte)
@@ -273,6 +287,7 @@ func (c *InsimSession) Scan(ctx context.Context) error {
 	}
 }
 
+// PreCall ...
 func (c *InsimSession) PreCall(data interface{}) {
 	// Warning: non-idomatic code. See the On method for documentation.
 	dtype := reflect.TypeOf(data)
@@ -284,6 +299,7 @@ func (c *InsimSession) PreCall(data interface{}) {
 	}
 }
 
+// Call ...
 func (c *InsimSession) Call(data interface{}) {
 	// Warning: non-idomatic code. See the On method for documentation.
 	dtype := reflect.TypeOf(data)
@@ -295,10 +311,12 @@ func (c *InsimSession) Call(data interface{}) {
 	}
 }
 
+// Conn ...
 func (c *InsimSession) Conn() net.Conn {
 	return c.conn
 }
 
+// Close ...
 func (c *InsimSession) Close() error {
 	return c.conn.Close()
 }

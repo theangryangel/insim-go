@@ -7,10 +7,12 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspSta ...
 const (
-	ISP_STA = 5
+	IspSta = 5
 )
 
+// Sta ...
 type Sta struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
@@ -32,36 +34,44 @@ type Sta struct {
 	Wind        uint8   `struct:"uint8"`
 }
 
+// Racing ...
 func (p *Sta) Racing() bool {
 	return p.RaceInProg == 1
 }
 
+// QualifyingDuration ...
 func (p *Sta) QualifyingDuration() time.Duration {
 	// TODO decode the special rules - should be shared with RST
 	return (time.Duration(p.QualMins) * time.Minute)
 }
 
+// Laps ...
 func (p *Sta) Laps() int32 {
 	// TODO decode the special rules - should be shared with RST
 	return int32(p.RaceLaps)
 }
 
+// UnmarshalInsim ...
 func (p *Sta) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Sta) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Sta) Type() uint8 {
-	return ISP_STA
+	return IspSta
 }
 
+// NewSta ...
 func NewSta() Packet {
 	return &Sta{}
 }
 
+// New ...
 func (p *Sta) New() Packet {
 	return NewSta()
 }

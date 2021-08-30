@@ -5,10 +5,12 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspMci ...
 const (
-	ISP_MCI = 38
+	IspMci = 38
 )
 
+// MciInfo ...
 type MciInfo struct {
 	Node      uint16 `struct:"uint16"`
 	Lap       uint16 `struct:"uint16"`
@@ -25,27 +27,32 @@ type MciInfo struct {
 	AngVel    int16  `struct:"int16"`
 }
 
+// Kmph ...
 func (p *MciInfo) Kmph() float32 {
 	// raw speed to Kilometers per hour
 	return float32(p.Speed) / 91.02
 }
 
+// Mph ...
 func (p *MciInfo) Mph() float32 {
 	// raw speed to Miles Per Hour
 	return float32(p.Speed) / 146.486067
 }
 
+// Mps ...
 func (p *MciInfo) Mps() float32 {
 	// raw speed to Meters per second
 	return float32(p.Speed) / 32768
 }
 
+// Mci ...
 type Mci struct {
 	ReqI uint8 `struct:"uint8"`
 	NumC uint8 `struct:"uint8,sizeof=Info"`
 	Info []MciInfo
 }
 
+// UnmarshalInsim ...
 func (p *Mci) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
@@ -55,18 +62,22 @@ func (p *Mci) UnmarshalInsim(data []byte) (err error) {
 	return nil
 }
 
+// MarshalInsim ...
 func (p *Mci) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Mci) Type() uint8 {
-	return ISP_MCI
+	return IspMci
 }
 
+// NewMci ...
 func NewMci() Packet {
 	return &Mci{}
 }
 
+// New ...
 func (p *Mci) New() Packet {
 	return NewMci()
 }

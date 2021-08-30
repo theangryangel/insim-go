@@ -39,6 +39,7 @@ var codepages map[byte]*encoding.Decoder = map[byte]*encoding.Decoder{
 	'K': korean.EUCKR.NewDecoder(),
 }
 
+// Decode ...
 func Decode(data []byte) (string, error) {
 	// TODO: We can do this with offsets rather than allocating to buffers and strings left, right and center.
 	// But it's Sunday morning and I don't have enough coffee right now.
@@ -55,7 +56,7 @@ func Decode(data []byte) (string, error) {
 		}
 
 		if data[i] == '^' && i+1 < len(data) {
-			if next_cp, ok := codepages[data[i+1]]; ok {
+			if nextCp, ok := codepages[data[i+1]]; ok {
 
 				if buf.Len() > 0 {
 
@@ -68,13 +69,13 @@ func Decode(data []byte) (string, error) {
 					buf.Reset()
 				}
 
-				cp = next_cp
+				cp = nextCp
 				i++
 				continue
 			}
 
-			if next_esc, ok := esc[data[i+1]]; ok {
-				buf.WriteByte(next_esc)
+			if nextEsc, ok := esc[data[i+1]]; ok {
+				buf.WriteByte(nextEsc)
 				i += 2
 				continue
 			}
@@ -96,6 +97,7 @@ func Decode(data []byte) (string, error) {
 	return output, nil
 }
 
+// StripColours ...
 func StripColours(data string) string {
 	re := regexp.MustCompile(`\^[0-9]`)
 	return re.ReplaceAllString(data, "")

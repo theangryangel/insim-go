@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
+// IspRst ...
 const (
-	ISP_RST = 17
+	IspRst = 17
 )
 
+// Rst ...
 type Rst struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
@@ -32,40 +34,49 @@ type Rst struct {
 	Split3   uint16 `struct:"uint16"`
 }
 
+// Qualifying ...
 func (p *Rst) Qualifying() bool {
 	return p.RaceLaps == 0
 }
 
+// Racing ...
 func (p *Rst) Racing() bool {
 	return p.QualMins == 0
 }
 
+// QualifyingDuration ...
 func (p *Rst) QualifyingDuration() time.Duration {
 	// TODO decode the special rules - should be shared with RST
 	return (time.Duration(p.QualMins) * time.Minute)
 }
 
+// Laps ...
 func (p *Rst) Laps() int32 {
 	// TODO decode the special rules - should be shared with RST
 	return int32(p.RaceLaps)
 }
 
+// UnmarshalInsim ...
 func (p *Rst) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Rst) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Rst) Type() uint8 {
-	return ISP_RST
+	return IspRst
 }
 
+// NewRst ...
 func NewRst() Packet {
 	return &Rst{}
 }
 
+// New ...
 func (p *Rst) New() Packet {
 	return NewRst()
 }

@@ -1,11 +1,6 @@
 package geometry
 
-type FixedPoint struct {
-	X int32 `struct:"int32"`
-	Y int32 `struct:"int32"`
-	Z int32 `struct:"int32"`
-}
-
+// FloatingPoint is a float32 X,Y,Z coordinate
 type FloatingPoint struct {
 	X float32 `struct:"float32"`
 	Y float32 `struct:"float32"`
