@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/theangryangel/insim-go/compare/v1.0.0...v1.1.0) (2021-08-30)
+
+
+### Features
+
+* bump version ([bf2727d](https://www.github.com/theangryangel/insim-go/commit/bf2727d5072b5c69278cdba94938648ab2570bb7))
+
 ## 1.0.0 (2021-08-30)
 
 
