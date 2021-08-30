@@ -136,17 +136,17 @@ type RelayErr struct {
 // ErrMessage ...
 func (p *RelayErr) ErrMessage() string {
 	switch p.Err {
-	case IR_ERR_PACKET1:
+	case RelayErrPacket1:
 		return "Invalid packet sent by client (wrong structure / length)"
-	case IR_ERR_PACKET2:
+	case RelayErrPacket2:
 		return "Invalid packet sent by client (packet was not allowed to be forwarded to host)"
-	case IR_ERR_HOSTNAME:
+	case RelayErrHostname:
 		return "Wrong hostname given by client"
-	case IR_ERR_ADMIN:
+	case RelayErrAdmin:
 		return "Wrong admin pass given by client"
-	case IR_ERR_SPEC:
+	case RelayErrSpec:
 		return "Wrong spec pass given by client"
-	case IR_ERR_NOSPEC:
+	case RelayErrNoSpec:
 		return "Spectator pass required, but none given"
 	default:
 		return "Unknown"
