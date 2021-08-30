@@ -7,10 +7,12 @@ import (
 	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
+// IspNcn ...
 const (
-	ISP_NCN = 18
+	IspNcn = 18
 )
 
+// Ncn ...
 type Ncn struct {
 	ReqI uint8 `struct:"uint8"`
 	Ucid uint8 `struct:"uint8"`
@@ -23,14 +25,17 @@ type Ncn struct {
 	Spare uint8  `struct:"uint8"`
 }
 
+// IsAdmin ...
 func (p *Ncn) IsAdmin() bool {
 	return p.Admin == 1
 }
 
+// IsRemote ...
 func (p *Ncn) IsRemote() bool {
 	return false // TODO
 }
 
+// UnmarshalInsim ...
 func (p *Ncn) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
@@ -50,18 +55,22 @@ func (p *Ncn) UnmarshalInsim(data []byte) (err error) {
 	return nil
 }
 
+// MarshalInsim ...
 func (p *Ncn) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Ncn) Type() uint8 {
-	return ISP_NCN
+	return IspNcn
 }
 
+// NewNcn ...
 func NewNcn() Packet {
 	return &Ncn{}
 }
 
+// New ...
 func (p *Ncn) New() Packet {
 	return NewNcn()
 }

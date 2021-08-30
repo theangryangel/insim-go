@@ -7,10 +7,12 @@ import (
 	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
+// IspMso ...
 const (
-	ISP_MSO = 11
+	IspMso = 11
 )
 
+// Mso ...
 type Mso struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
@@ -22,6 +24,7 @@ type Mso struct {
 	Msg       string
 }
 
+// UnmarshalInsim ...
 func (p *Mso) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
@@ -36,18 +39,22 @@ func (p *Mso) UnmarshalInsim(data []byte) (err error) {
 	return err
 }
 
+// MarshalInsim ...
 func (p *Mso) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Mso) Type() uint8 {
-	return ISP_MSO
+	return IspMso
 }
 
+// NewMso ...
 func NewMso() Packet {
 	return &Mso{}
 }
 
+// New ...
 func (p *Mso) New() Packet {
 	return NewMso()
 }

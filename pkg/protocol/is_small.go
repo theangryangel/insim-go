@@ -5,21 +5,23 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspSmall ...
 const (
-	ISP_SMALL = 4
+	IspSmall = 4
 
-	SMALL_NONE = 0
-	SMALL_SSP  = 1
-	SMALL_SSG  = 2
-	SMALL_VTA  = 3
-	SMALL_TMS  = 4
-	SMALL_STP  = 5
-	SMALL_RTP  = 6
-	SMALL_NLI  = 7
-	SMALL_ALC  = 8
-	SMALL_LCS  = 9
+	SmallNone = 0
+	SmallSSP  = 1
+	SmallSSG  = 2
+	SmallVTA  = 3
+	SmallTMS  = 4
+	SmallSTP  = 5
+	SmallRTP  = 6
+	SmallNLI  = 7
+	SmallALC  = 8
+	SmallLCS  = 9
 )
 
+// Small ...
 type Small struct {
 	ReqI uint8 `struct:"uint8"`
 	SubT uint8 `struct:"uint8"`
@@ -27,22 +29,27 @@ type Small struct {
 	UVal uint32 `struct:"uint32"`
 }
 
+// UnmarshalInsim ...
 func (p *Small) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Small) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Small) Type() (id uint8) {
-	return ISP_SMALL
+	return IspSmall
 }
 
+// NewSmall ...
 func NewSmall() Packet {
 	return &Small{}
 }
 
+// New ...
 func (p *Small) New() Packet {
 	return NewSmall()
 }

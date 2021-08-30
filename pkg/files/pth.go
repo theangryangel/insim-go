@@ -8,16 +8,21 @@ import (
 	"math"
 )
 
-var LeftCos = math.Cos(90 * math.Pi / 180)
-var LeftSin = math.Sin(90 * math.Pi / 180)
-var RightCos = math.Cos(-90 * math.Pi / 180)
-var RightSin = math.Sin(-90 * math.Pi / 180)
+var leftCos = math.Cos(90 * math.Pi / 180)
+var leftSin = math.Sin(90 * math.Pi / 180)
+var rightCos = math.Cos(-90 * math.Pi / 180)
+var rightSin = math.Sin(-90 * math.Pi / 180)
 
+// PthLimit describes the left and right limits of the track, from the "centre" point
+// Left and Right is dependent on the direction of track around the circuit.
 type PthLimit struct {
 	Left  float32 `struct:"float32"`
 	Right float32 `struct:"float32"`
 }
 
+// PthNode describes a point on the track: the centre point, the direction and the limits of the track and road
+// These values are the raw values and should not be trusted. Use RoadCentre, RoadLimits, etc. as these will have
+// the correct rotations and offsets applied.
 type PthNode struct {
 	Centre    geometry.FixedPoint
 	Direction geometry.FloatingPoint
@@ -26,6 +31,7 @@ type PthNode struct {
 	RoadLimit  PthLimit
 }
 
+// RoadCentre will return the X,Y coordinates of the track centre at this node
 func (node *PthNode) RoadCentre(metres bool) (float64, float64) {
 	factor := float64(1)
 	if metres {
@@ -35,36 +41,41 @@ func (node *PthNode) RoadCentre(metres bool) (float64, float64) {
 	return (float64(node.Centre.X) / factor), (float64(-node.Centre.Y) / factor)
 }
 
+// RoadLimits will return X, Y coordinates for the track limits, at this node,
+// with the correct rotations, etc. applied.
 func (node *PthNode) RoadLimits(metres bool) (float64, float64, float64, float64) {
 	factor := float64(1)
 	if metres {
 		factor = 65536
 	}
 
-	rlx := (float64(node.Direction.X)*LeftCos-(-float64(node.Direction.Y))*LeftSin)*float64(node.RoadLimit.Left) + (float64(node.Centre.X) / factor)
-	rly := (float64(-node.Direction.Y)*LeftCos+float64(node.Direction.X)*LeftSin)*float64(node.RoadLimit.Left) + (float64(-node.Centre.Y) / factor)
+	rlx := (float64(node.Direction.X)*leftCos-(-float64(node.Direction.Y))*leftSin)*float64(node.RoadLimit.Left) + (float64(node.Centre.X) / factor)
+	rly := (float64(-node.Direction.Y)*leftCos+float64(node.Direction.X)*leftSin)*float64(node.RoadLimit.Left) + (float64(-node.Centre.Y) / factor)
 
-	rrx := (float64(node.Direction.X)*RightCos-(-float64(node.Direction.Y))*RightSin)*float64(-node.RoadLimit.Right) + (float64(node.Centre.X) / factor)
-	rry := (float64(-node.Direction.Y)*RightCos+float64(node.Direction.X)*RightSin)*float64(-node.RoadLimit.Right) + (float64(-node.Centre.Y) / factor)
+	rrx := (float64(node.Direction.X)*rightCos-(-float64(node.Direction.Y))*rightSin)*float64(-node.RoadLimit.Right) + (float64(node.Centre.X) / factor)
+	rry := (float64(-node.Direction.Y)*rightCos+float64(node.Direction.X)*rightSin)*float64(-node.RoadLimit.Right) + (float64(-node.Centre.Y) / factor)
 
 	return rlx, rly, rrx, rry
 }
 
+// OuterLimits will return X, Y coordinates for the outer limits, at this node,
+// with the correct rotations, etc. applied.
 func (node *PthNode) OuterLimits(metres bool) (float64, float64, float64, float64) {
 	factor := float64(1)
 	if metres {
 		factor = 65536
 	}
 
-	llx := (float64(node.Direction.X)*LeftCos-(-float64(node.Direction.Y))*LeftSin)*float64(node.OuterLimit.Left) + (float64(node.Centre.X) / factor)
-	lly := (float64(-node.Direction.Y)*LeftCos+float64(node.Direction.X)*LeftSin)*float64(node.OuterLimit.Left) + (float64(-node.Centre.Y) / factor)
+	llx := (float64(node.Direction.X)*leftCos-(-float64(node.Direction.Y))*leftSin)*float64(node.OuterLimit.Left) + (float64(node.Centre.X) / factor)
+	lly := (float64(-node.Direction.Y)*leftCos+float64(node.Direction.X)*leftSin)*float64(node.OuterLimit.Left) + (float64(-node.Centre.Y) / factor)
 
-	lrx := (float64(node.Direction.X)*RightCos-(-float64(node.Direction.Y))*RightSin)*float64(-node.OuterLimit.Right) + (float64(node.Centre.X) / factor)
-	lry := (float64(-node.Direction.Y)*RightCos+float64(node.Direction.X)*RightSin)*float64(-node.OuterLimit.Right) + (float64(-node.Centre.Y) / factor)
+	lrx := (float64(node.Direction.X)*rightCos-(-float64(node.Direction.Y))*rightSin)*float64(-node.OuterLimit.Right) + (float64(node.Centre.X) / factor)
+	lry := (float64(-node.Direction.Y)*rightCos+float64(node.Direction.X)*rightSin)*float64(-node.OuterLimit.Right) + (float64(-node.Centre.Y) / factor)
 
 	return llx, lly, lrx, lry
 }
 
+// Pth is a PTH file
 type Pth struct {
 	Magic    string `struct:"[6]byte" json:"-"`
 	Version  uint8  `struct:"uint8" json:"-"`
@@ -76,6 +87,7 @@ type Pth struct {
 	Nodes []PthNode
 }
 
+// NewPth will create a new Pth from a file
 func NewPth(file string) (*Pth, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -92,6 +104,8 @@ func NewPth(file string) (*Pth, error) {
 	return p, nil
 }
 
+// OuterBounds will return X, Y coordinates for the outer bounds, at this node,
+// with the correct rotations, etc. applied.
 func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
 
 	minx := float64(0.0)
@@ -119,9 +133,9 @@ func (p *Pth) OuterBounds(metres bool) (float64, float64, float64, float64) {
 
 }
 
+// GenerateScaleTransform will return values to help fit a Pth to a specific size (scale and transform)
 func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (float64, float64, float64, float64) {
-	// TODO this should probably be refactored out of Pth, it would be useful in other plces.
-	// But we should introduce some general geometry types and funcs
+	// TODO(theangryangel): Rename
 
 	minX, minY, maxX, maxY := p.OuterBounds(true)
 
@@ -169,8 +183,10 @@ func (p *Pth) GenerateScaleTransform(imageWidth float64, imageHeight float64) (f
 	return scalex, scaley, translatex, translatey
 }
 
+// PthFit is deprecated and will be removed
 type PthFit struct {
-	// TODO reuse Pth?
+	// TODO(theangryangel): Remove
+	// This doesnt need to exist, GenerateScaleTransform should be enough
 	Bounds [4]float64
 
 	OuterX []float64
@@ -192,8 +208,9 @@ type PthFit struct {
 	TranslateY float64
 }
 
+// FitTo is deprecated and will be removed
 func (p *Pth) FitTo(imageWidth float64, imageHeight float64, resolution int) PthFit {
-	// TODO refactor a bit
+	// TODO(theangryangel): Remove
 	var roadCX []float64
 	var roadCY []float64
 

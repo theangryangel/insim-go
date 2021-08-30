@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
+// IspRes ...
 const (
-	ISP_RES = 35
+	IspRes = 35
 )
 
+// Res ...
 type Res struct {
 	ReqI uint8 `struct:"uint8"`
 
@@ -37,34 +39,42 @@ type Res struct {
 	PSeconds uint16 `struct:"uint16"`
 }
 
+// RacePosition ...
 func (p *Res) RacePosition() uint8 {
 	return p.ResultNum + 1
 }
 
+// TotalTime ...
 func (p *Res) TotalTime() time.Duration {
 	return (time.Duration(p.TTime) * time.Millisecond)
 }
 
+// BestTime ...
 func (p *Res) BestTime() time.Duration {
 	return (time.Duration(p.BTime) * time.Millisecond)
 }
 
+// UnmarshalInsim ...
 func (p *Res) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Res) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Res) Type() (id uint8) {
-	return ISP_RES
+	return IspRes
 }
 
+// NewRes ...
 func NewRes() Packet {
 	return &Res{}
 }
 
+// New ...
 func (p *Res) New() Packet {
 	return NewRes()
 }

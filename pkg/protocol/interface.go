@@ -1,5 +1,6 @@
 package protocol
 
+// Packet ...
 type Packet interface {
 	UnmarshalInsim(data []byte) (err error)
 	MarshalInsim() (data []byte, err error)

@@ -5,13 +5,15 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspFlg ...
 const (
-	ISP_FLG = 32
+	IspFlg = 32
 
-	FLG_YELLOW = 1
-	FLG_BLUE   = 2
+	FlagYellow = 1
+	FlagBlue   = 2
 )
 
+// Flg ...
 type Flg struct {
 	ReqI uint8 `struct:"uint8"`
 	Plid uint8 `struct:"uint8"`
@@ -22,26 +24,32 @@ type Flg struct {
 	Sp3       uint8 `struct:"uint8"`
 }
 
+// Changed ...
 func (p *Flg) Changed() (int, bool) {
 	return int(p.Flag), (p.OffOn > 0)
 }
 
+// UnmarshalInsim ...
 func (p *Flg) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Flg) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Flg) Type() (id uint8) {
-	return ISP_FLG
+	return IspFlg
 }
 
+// NewFlg ...
 func NewFlg() Packet {
 	return &Flg{}
 }
 
+// New ...
 func (p *Flg) New() Packet {
 	return NewFlg()
 }

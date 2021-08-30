@@ -5,80 +5,95 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IrpHlr ...
 const (
-	IRP_HLR = 252 // Hostlist request
-	IRP_HOS = 253 // Hostlist response
-	IRP_SEL = 254 // Send : To select a host
-	IRP_ERR = 255 // Error
+	IrpHlr = 252 // Hostlist request
+	IrpHos = 253 // Hostlist response
+	IrpSel = 254 // Send : To select a host
+	IrpErr = 255 // Error
 
-	IR_ERR_PACKET1  = 1 // Invalid packet sent by client (wrong structure / length)
-	IR_ERR_PACKET2  = 2 // Invalid packet sent by client (packet was not allowed to be forwarded to host)
-	IR_ERR_HOSTNAME = 3 // Wrong hostname given by client
-	IR_ERR_ADMIN    = 4 // Wrong admin pass given by client
-	IR_ERR_SPEC     = 5 // Wrong spec pass given by client
-	IR_ERR_NOSPEC   = 6 // Spectator pass required, but none given
+	RelayErrPacket1  = 1 // Invalid packet sent by client (wrong structure / length)
+	RelayErrPacket2  = 2 // Invalid packet sent by client (packet was not allowed to be forwarded to host)
+	RelayErrHostname = 3 // Wrong hostname given by client
+	RelayErrAdmin    = 4 // Wrong admin pass given by client
+	RelayErrSpec     = 5 // Wrong spec pass given by client
+	RelayErrNoSpec   = 6 // Spectator pass required, but none given
 )
 
-type IrpHlr struct {
+// RelayHlr ...
+type RelayHlr struct {
 	ReqI  uint8 `struct:"uint8"`
 	Spare uint8 `struct:"uint8"`
 }
 
-func (p *IrpHlr) UnmarshalInsim(data []byte) (err error) {
+// UnmarshalInsim ...
+func (p *RelayHlr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpHlr) MarshalInsim() (data []byte, err error) {
+// MarshalInsim ...
+func (p *RelayHlr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *IrpHlr) Type() uint8 {
-	return IRP_HLR
+// Type ...
+func (p *RelayHlr) Type() uint8 {
+	return IrpHlr
 }
 
-func NewIrpHlr() Packet {
-	return &IrpHlr{}
+// NewRelayHlr ...
+func NewRelayHlr() Packet {
+	return &RelayHlr{}
 }
 
-func (p *IrpHlr) New() Packet {
-	return NewIrpHlr()
+// New ...
+func (p *RelayHlr) New() Packet {
+	return NewRelayHlr()
 }
 
-type IrpHosInfo struct {
+// RelayHosInfo ...
+type RelayHosInfo struct {
 	HName    string `struct:"[32]byte"`
 	Track    string `struct:"[6]byte"`
 	Flags    uint8  `struct:"uint8"`
 	NumConns uint8  `struct:"uint8"`
 }
 
-type IrpHos struct {
+// RelayHos ...
+type RelayHos struct {
 	ReqI     uint8 `struct:"uint8"`
 	NumHosts uint8 `struct:"uint8,sizeof=HInfo"`
 
-	HInfo []IrpHosInfo
+	HInfo []RelayHosInfo
 }
 
-func (p *IrpHos) UnmarshalInsim(data []byte) (err error) {
+// UnmarshalInsim ...
+func (p *RelayHos) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpHos) MarshalInsim() (data []byte, err error) {
+// MarshalInsim ...
+func (p *RelayHos) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *IrpHos) Type() uint8 {
-	return IRP_HOS
+// Type ...
+func (p *RelayHos) Type() uint8 {
+	return IrpHos
 }
 
-func NewIrpHos() Packet {
-	return &IrpHos{}
+// NewRelayHos ...
+func NewRelayHos() Packet {
+	return &RelayHos{}
 }
 
-func (p *IrpHos) New() Packet {
-	return NewIrpHos()
+// New ...
+func (p *RelayHos) New() Packet {
+	return NewRelayHos()
 }
 
-type IrpSel struct {
+// RelaySel ...
+type RelaySel struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
 
@@ -87,32 +102,39 @@ type IrpSel struct {
 	Spec  string `struct:"[16]byte"`
 }
 
-func (p *IrpSel) UnmarshalInsim(data []byte) (err error) {
+// UnmarshalInsim ...
+func (p *RelaySel) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpSel) MarshalInsim() (data []byte, err error) {
+// MarshalInsim ...
+func (p *RelaySel) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *IrpSel) Type() uint8 {
-	return IRP_SEL
+// Type ...
+func (p *RelaySel) Type() uint8 {
+	return IrpSel
 }
 
-func NewIrpSel() Packet {
-	return &IrpSel{}
+// NewRelaySel ...
+func NewRelaySel() Packet {
+	return &RelaySel{}
 }
 
-func (p *IrpSel) New() Packet {
-	return NewIrpSel()
+// New ...
+func (p *RelaySel) New() Packet {
+	return NewRelaySel()
 }
 
-type IrpErr struct {
+// RelayErr ...
+type RelayErr struct {
 	ReqI uint8 `struct:"uint8"`
 	Err  uint8 `struct:"uint8"`
 }
 
-func (p *IrpErr) ErrMessage() string {
+// ErrMessage ...
+func (p *RelayErr) ErrMessage() string {
 	switch p.Err {
 	case IR_ERR_PACKET1:
 		return "Invalid packet sent by client (wrong structure / length)"
@@ -131,22 +153,27 @@ func (p *IrpErr) ErrMessage() string {
 	}
 }
 
-func (p *IrpErr) UnmarshalInsim(data []byte) (err error) {
+// UnmarshalInsim ...
+func (p *RelayErr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
-func (p *IrpErr) MarshalInsim() (data []byte, err error) {
+// MarshalInsim ...
+func (p *RelayErr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
-func (p *IrpErr) Type() uint8 {
-	return IRP_ERR
+// Type ...
+func (p *RelayErr) Type() uint8 {
+	return IrpErr
 }
 
-func NewIrpErr() Packet {
-	return &IrpErr{}
+// NewRelayErr ...
+func NewRelayErr() Packet {
+	return &RelayErr{}
 }
 
-func (p *IrpErr) New() Packet {
-	return NewIrpErr()
+// New ...
+func (p *RelayErr) New() Packet {
+	return NewRelayErr()
 }
