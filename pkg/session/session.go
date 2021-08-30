@@ -156,7 +156,7 @@ func (c *InsimSession) Init() (err error) {
 
 // SelectRelayHost ...
 func (c *InsimSession) SelectRelayHost(hostname string) (err error) {
-	sel := protocol.NewIrpSel().(*protocol.RelaySel)
+	sel := protocol.NewRelaySel().(*protocol.RelaySel)
 	sel.HName = hostname
 	return c.Write(sel)
 }
