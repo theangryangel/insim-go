@@ -6,10 +6,12 @@ import (
 	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
+// IspIsm ...
 const (
-	ISP_ISM = 10
+	IspIsm = 10
 )
 
+// Ism ...
 type Ism struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
@@ -22,6 +24,7 @@ type Ism struct {
 	HName string `struct:"[]byte"`
 }
 
+// UnmarshalInsim ...
 func (p *Ism) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
@@ -35,18 +38,22 @@ func (p *Ism) UnmarshalInsim(data []byte) (err error) {
 	return nil
 }
 
+// MarshalInsim ...
 func (p *Ism) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Ism) Type() uint8 {
-	return ISP_ISM
+	return IspIsm
 }
 
+// NewIsm ...
 func NewIsm() Packet {
 	return &Ism{}
 }
 
+// New ...
 func (p *Ism) New() Packet {
 	return NewIsm()
 }

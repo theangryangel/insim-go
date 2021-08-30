@@ -5,59 +5,66 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspTiny ...
 const (
-	ISP_TINY = 3 //  - both ways		: multi purpose
+	IspTiny = 3 //  - both ways		: multi purpose
 
-	TINY_NONE  = 0
-	TINY_VER   = 1
-	TINY_CLOSE = 2
-	TINY_PING  = 3
-	TINY_REPLY = 4
-	TINY_VTC   = 5
-	TINY_SCP   = 6
-	TINY_SST   = 7
-	TINY_GTH   = 8
-	TINY_MPE   = 9
-	TINY_ISM   = 10
-	TINY_REN   = 11
-	TINY_CLR   = 12
-	TINY_NCN   = 13
-	TINY_NPL   = 14
-	TINY_RES   = 15
-	TINY_NLP   = 16
-	TINY_MCI   = 17
-	TINY_REO   = 18
-	TINY_RST   = 19
-	TINY_AXI   = 20
-	TINY_AXC   = 21
-	TINY_RIP   = 22
-	TINY_NCI   = 23
-	TINY_ALC   = 24
-	TINY_AXM   = 25
-	TINY_SLC   = 26
+	TinyNone  = 0
+	TinyVer   = 1
+	TinyClose = 2
+	TinyPing  = 3
+	TinyReply = 4
+	TinyVTC   = 5
+	TinySCP   = 6
+	TinySST   = 7
+	TinyGTH   = 8
+	TinyMPE   = 9
+	TinyISM   = 10
+	TinyREN   = 11
+	TinyCLR   = 12
+	TinyNCN   = 13
+	TinyNPL   = 14
+	TinyRES   = 15
+	TinyNLP   = 16
+	TinyMCI   = 17
+	TinyREO   = 18
+	TinyRST   = 19
+	TinyAXI   = 20
+	TinyAXC   = 21
+	TinyRIP   = 22
+	TinyNCI   = 23
+	TinyALC   = 24
+	TinyAXM   = 25
+	TinySLC   = 26
 )
 
+// Tiny ...
 type Tiny struct {
 	ReqI uint8 `struct:"uint8"`
 	SubT uint8 `struct:"uint8"`
 }
 
+// UnmarshalInsim ...
 func (p *Tiny) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Tiny) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Tiny) Type() (id uint8) {
-	return ISP_TINY
+	return IspTiny
 }
 
+// NewTiny ...
 func NewTiny() Packet {
 	return &Tiny{}
 }
 
+// New ...
 func (p *Tiny) New() Packet {
 	return NewTiny()
 }

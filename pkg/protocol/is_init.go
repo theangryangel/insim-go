@@ -5,10 +5,12 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspIsi ...
 const (
-	ISP_ISI = 1 //  - instruction		: insim initialise
+	IspIsi = 1
 )
 
+// Init ...
 type Init struct {
 	ReqI     uint8  `struct:"uint8"`
 	Zero     uint8  `struct:"uint8"`
@@ -21,22 +23,27 @@ type Init struct {
 	IName    string `struct:"[16]byte"`
 }
 
+// UnmarshalInsim ...
 func (p *Init) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Init) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Init) Type() (id uint8) {
-	return ISP_ISI
+	return IspIsi
 }
 
+// New ...
 func (p *Init) New() Packet {
 	return NewInit()
 }
 
+// NewInit ...
 func NewInit() Packet {
 	flags := uint16(0)
 	flags = flags | 32

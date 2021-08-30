@@ -7,10 +7,12 @@ import (
 	"github.com/theangryangel/insim-go/pkg/strings"
 )
 
+// IspNpl ...
 const (
-	ISP_NPL = 21
+	IspNpl = 21
 )
 
+// Npl ...
 type Npl struct {
 	ReqI uint8 `struct:"uint8"`
 
@@ -36,6 +38,7 @@ type Npl struct {
 	Spare3 uint8 `struct:"uint8"`
 }
 
+// UnmarshalInsim ...
 func (p *Npl) UnmarshalInsim(data []byte) (err error) {
 	err = restruct.Unpack(data, binary.LittleEndian, p)
 	if err != nil {
@@ -55,18 +58,22 @@ func (p *Npl) UnmarshalInsim(data []byte) (err error) {
 	return nil
 }
 
+// MarshalInsim ...
 func (p *Npl) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Npl) Type() uint8 {
-	return ISP_NCN
+	return IspNcn
 }
 
+// NewNpl ...
 func NewNpl() Packet {
 	return &Npl{}
 }
 
+// New ...
 func (p *Npl) New() Packet {
 	return NewNpl()
 }

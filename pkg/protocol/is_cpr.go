@@ -5,10 +5,12 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspCpr ...
 const (
-	ISP_CPR = 20
+	IspCpr = 20
 )
 
+// Cpr ...
 type Cpr struct {
 	ReqI uint8 `struct:"uint8"`
 	Ucid uint8 `struct:"uint8"`
@@ -17,22 +19,27 @@ type Cpr struct {
 	Plate string `struct:"[8]byte"`
 }
 
+// UnmarshalInsim ...
 func (p *Cpr) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Cpr) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Cpr) Type() uint8 {
-	return ISP_NCN
+	return IspCpr
 }
 
+// NewCpr ...
 func NewCpr() Packet {
 	return &Cpr{}
 }
 
+// New ...
 func (p *Cpr) New() Packet {
 	return NewCpr()
 }

@@ -5,16 +5,18 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspPla ...
 const (
-	ISP_PLA = 28
+	IspPla = 28
 
-	PITLANE_EXIT       = 0
-	PITLANE_ENTER      = 1
-	PITLANE_NO_PURPOSE = 2
-	PITLANE_DT         = 3
-	PITLANE_SG         = 4
+	PitlaneFactExit      = 0
+	PitlaneFactEnter     = 1
+	PitlaneFactNoPurpose = 2
+	PitlaneFactDT        = 3
+	PitlaneFactSG        = 4
 )
 
+// Pla ...
 type Pla struct {
 	ReqI uint8 `struct:"uint8"`
 	Plid uint8 `struct:"uint8"`
@@ -24,47 +26,57 @@ type Pla struct {
 	Sp3  uint8 `struct:"uint8"`
 }
 
+// Entering ...
 func (p *Pla) Entering() bool {
 	switch p.Fact {
-	case PITLANE_ENTER, PITLANE_NO_PURPOSE, PITLANE_DT, PITLANE_SG:
+	case PitlaneFactEnter, PitlaneFactNoPurpose, PitlaneFactDT, PitlaneFactSG:
 		return true
 	default:
 		return false
 	}
 }
 
+// Exiting ...
 func (p *Pla) Exiting() bool {
-	return p.Fact == PITLANE_EXIT
+	return p.Fact == PitlaneFactExit
 }
 
+// NoPurpose ...
 func (p *Pla) NoPurpose() bool {
-	return p.Fact == PITLANE_NO_PURPOSE
+	return p.Fact == PitlaneFactNoPurpose
 }
 
+// StopGo ...
 func (p *Pla) StopGo() bool {
-	return p.Fact == PITLANE_SG
+	return p.Fact == PitlaneFactSG
 }
 
+// DriveThrough ...
 func (p *Pla) DriveThrough() bool {
-	return p.Fact == PITLANE_DT
+	return p.Fact == PitlaneFactDT
 }
 
+// UnmarshalInsim ...
 func (p *Pla) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Pla) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Pla) Type() uint8 {
-	return ISP_PLL
+	return IspPla
 }
 
+// NewPla ...
 func NewPla() Packet {
 	return &Pla{}
 }
 
+// New ...
 func (p *Pla) New() Packet {
 	return NewPla()
 }

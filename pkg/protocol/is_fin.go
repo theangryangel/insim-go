@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
+// IspFin ...
 const (
-	ISP_FIN = 34
+	IspFin = 34
 )
 
+// Fin ...
 type Fin struct {
 	ReqI uint8 `struct:"uint8"`
 
@@ -27,30 +29,37 @@ type Fin struct {
 	Flags    uint16 `struct:"uint16"`
 }
 
+// TotalTime ...
 func (p *Fin) TotalTime() time.Duration {
 	return (time.Duration(p.TTime) * time.Millisecond)
 }
 
+// BestTime ...
 func (p *Fin) BestTime() time.Duration {
 	return (time.Duration(p.BTime) * time.Millisecond)
 }
 
+// UnmarshalInsim ...
 func (p *Fin) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Fin) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Fin) Type() (id uint8) {
-	return ISP_FIN
+	return IspFin
 }
 
+// NewFin ...
 func NewFin() Packet {
 	return &Fin{}
 }
 
+// New ...
 func (p *Fin) New() Packet {
 	return NewFin()
 }

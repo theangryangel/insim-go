@@ -5,10 +5,12 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspToc ...
 const (
-	ISP_TOC = 31
+	IspToc = 31
 )
 
+// Toc ...
 type Toc struct {
 	ReqI uint8 `struct:"uint8"`
 	Plid uint8 `struct:"uint8"`
@@ -19,22 +21,27 @@ type Toc struct {
 	Sp3     uint8 `struct:"uint8"`
 }
 
+// UnmarshalInsim ...
 func (p *Toc) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Toc) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Toc) Type() (id uint8) {
-	return ISP_TOC
+	return IspToc
 }
 
+// NewToc ...
 func NewToc() Packet {
 	return &Toc{}
 }
 
+// New ...
 func (p *Toc) New() Packet {
 	return NewToc()
 }

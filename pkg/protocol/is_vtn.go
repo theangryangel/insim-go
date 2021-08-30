@@ -5,15 +5,17 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
+// IspVtn ...
 const (
-	ISP_VTN = 16
+	IspVtn = 16
 
-	VOTE_NONE    = 0
-	VOTE_END     = 1
-	VOTE_RESTART = 2
-	VOTE_QUALIFY = 3
+	VoteNone    = 0
+	VoteEnd     = 1
+	VoteRestart = 2
+	VoteQualify = 3
 )
 
+// Vtn ...
 type Vtn struct {
 	ReqI uint8 `struct:"uint8"`
 	Zero uint8 `struct:"uint8"`
@@ -24,38 +26,47 @@ type Vtn struct {
 	Sp3    uint8 `struct:"uint8"`
 }
 
+// Voting ...
 func (p *Vtn) Voting() bool {
-	return p.Action != VOTE_NONE
+	return p.Action != VoteNone
 }
 
+// Restart ...
 func (p *Vtn) Restart() bool {
-	return p.Action == VOTE_RESTART
+	return p.Action == VoteRestart
 }
 
+// End ...
 func (p *Vtn) End() bool {
-	return p.Action == VOTE_END
+	return p.Action == VoteEnd
 }
 
+// Qualify ...
 func (p *Vtn) Qualify() bool {
-	return p.Action == VOTE_QUALIFY
+	return p.Action == VoteQualify
 }
 
+// UnmarshalInsim ...
 func (p *Vtn) UnmarshalInsim(data []byte) (err error) {
 	return restruct.Unpack(data, binary.LittleEndian, p)
 }
 
+// MarshalInsim ...
 func (p *Vtn) MarshalInsim() (data []byte, err error) {
 	return restruct.Pack(binary.LittleEndian, p)
 }
 
+// Type ...
 func (p *Vtn) Type() uint8 {
-	return ISP_VTN
+	return IspVtn
 }
 
+// NewVtn ...
 func NewVtn() Packet {
 	return &Vtn{}
 }
 
+// New ...
 func (p *Vtn) New() Packet {
 	return NewVtn()
 }
